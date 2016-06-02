@@ -47,9 +47,9 @@ import ApiClient = require("nativescript-apiclient");
 import HTTP = require("http");
 
 interface IUser {
-    displayName: string;
+    displayName?: string;
     id?: number;
-    name: string;
+    name?: string;
 }
 
 var client = ApiClient.newClient({
