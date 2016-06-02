@@ -5,6 +5,8 @@
 
 A [NativeScript](https://nativescript.org/) module module for simply calling HTTP based APIs.
 
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=G88PA3Q7FFSGN)
+
 ## License
 
 [MIT license](https://raw.githubusercontent.com/mkloubert/nativescript-apiclient/master/LICENSE)
