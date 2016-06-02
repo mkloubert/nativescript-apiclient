@@ -155,15 +155,11 @@ class ApiClient extends LoggerBase implements IApiClient {
     constructor(cfg : IApiClientConfig) {
         super();
         
-        // base URL
-        if (!TypeUtils.isNullOrUndefined(cfg.baseUrl)) {
-            this.baseUrl = cfg.baseUrl;
-        }
-        
-        // route
-        if (!TypeUtils.isNullOrUndefined(cfg.route)) {
-            this.route = cfg.route;
-        }
+        this.baseUrl = cfg.baseUrl;
+        this.route = cfg.route;
+        this.headers = cfg.headers;
+        this.params = cfg.params;
+        this.routeParams = cfg.routeParams;
         
         // beforeSend()
         if (!TypeUtils.isNullOrUndefined(cfg.beforeSend)) {
@@ -235,6 +231,7 @@ class ApiClient extends LoggerBase implements IApiClient {
             }
         }
         
+        // ifStatus()
         if (!TypeUtils.isNullOrUndefined(cfg.ifStatus)) {
             for (var i = 0; i < cfg.ifStatus.length; i++) {
                 var ise = <IIfStatus>cfg.ifStatus[i];
@@ -245,6 +242,7 @@ class ApiClient extends LoggerBase implements IApiClient {
             }
         }
         
+        // if()
         if (!TypeUtils.isNullOrUndefined(cfg.if)) {
             for (var i = 0; i < cfg.if.length; i++) {
                 var ie = <IIfResponse>cfg.if[i];

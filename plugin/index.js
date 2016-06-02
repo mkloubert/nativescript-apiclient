@@ -123,14 +123,11 @@ var ApiClient = (function (_super) {
         this.formatProviders = [];
         this.ifEntries = [];
         this.logActions = [];
-        // base URL
-        if (!TypeUtils.isNullOrUndefined(cfg.baseUrl)) {
-            this.baseUrl = cfg.baseUrl;
-        }
-        // route
-        if (!TypeUtils.isNullOrUndefined(cfg.route)) {
-            this.route = cfg.route;
-        }
+        this.baseUrl = cfg.baseUrl;
+        this.route = cfg.route;
+        this.headers = cfg.headers;
+        this.params = cfg.params;
+        this.routeParams = cfg.routeParams;
         // beforeSend()
         if (!TypeUtils.isNullOrUndefined(cfg.beforeSend)) {
             this.beforeSend(cfg.beforeSend);
@@ -188,6 +185,7 @@ var ApiClient = (function (_super) {
                 }
             }
         }
+        // ifStatus()
         if (!TypeUtils.isNullOrUndefined(cfg.ifStatus)) {
             for (var i = 0; i < cfg.ifStatus.length; i++) {
                 var ise = cfg.ifStatus[i];
@@ -196,6 +194,7 @@ var ApiClient = (function (_super) {
                 }
             }
         }
+        // if()
         if (!TypeUtils.isNullOrUndefined(cfg.if)) {
             for (var i = 0; i < cfg.if.length; i++) {
                 var ie = cfg.if[i];
