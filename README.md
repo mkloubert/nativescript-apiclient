@@ -84,7 +84,7 @@ for (var userId = 1; userId <= 100; userId++) {
 
 Routes are suffixes for a base URL.
 
-You can define one or parameters inside that route, which are replaced when you starting a call.
+You can define one or parameters inside that route, which are replaced when you start a request.
 
 If you create an client like this
 
@@ -101,7 +101,7 @@ and start a request like this
 client.get({
     routeParams: {
         id: 5979  // {id},
-        resource: "profile"
+        resource: "profile"  // {resource}
     }
 });
 ```
@@ -110,6 +110,78 @@ The client will call the URL
 
 ```
 [GET]  https://api.example.com/users/5979/profile
+```
+
+## Requests
+
+### GET
+
+```typescript
+// ?TM=5979&MMK=23979
+client.get({
+    params: {
+        TM: 5979,
+        MK: 23979
+    }
+});
+```
+
+### POST
+
+```typescript
+client.post({
+    content: {
+        id: 5979,
+        name: "Tanja"
+    },
+    
+    type: ApiClient.HttpRequestType.JSON
+});
+```
+
+### PUT
+
+```typescript
+client.put({
+    content: '<user><id>23979</id><name>Marcel</name></user>',
+    
+    type: ApiClient.HttpRequestType.XML
+});
+```
+
+### PATCH
+
+```typescript
+client.patch({
+    content: '<user id="241279"><name>Julia</name></user>',
+    
+    type: ApiClient.HttpRequestType.XML
+});
+```
+
+### DELETE
+
+```typescript
+client.post({
+    content: {
+        id: 221286
+    },
+    
+    type: ApiClient.HttpRequestType.JSON
+});
+```
+
+### Custom
+
+```typescript
+client.request("FOO", {
+    content: {
+        TM: 5979,
+        MK: 23979
+    },
+    
+    type: ApiClient.HttpRequestType.JSON
+});
 ```
 
 ## Logging
