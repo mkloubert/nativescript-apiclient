@@ -445,7 +445,7 @@ var ApiClient = (function (_super) {
         // before send actions
         for (var i = 0; i < me.beforeSendActions.length; i++) {
             var bsa = me.beforeSendActions[i];
-            bsa(httpRequestOpts);
+            bsa(httpRequestOpts, opts.tag);
         }
         var httpReq = new HttpRequest(me, httpRequestOpts);
         me.dbg("URL: " + httpRequestOpts.url, "HttpRequestOptions");
@@ -466,13 +466,13 @@ var ApiClient = (function (_super) {
                 result.setContext(ApiClientResultContext.Complete);
             }
             if (!TypeUtils.isNullOrUndefined(me.completeAction)) {
-                me.completeAction(new ApiClientCompleteContext(me, httpReq, result, err));
+                me.completeAction(new ApiClientCompleteContext(me, httpReq, result, err, opts.tag));
             }
         };
         try {
             HTTP.request(httpRequestOpts)
                 .then(function (response) {
-                var result = new ApiClientResult(me, httpReq, response);
+                var result = new ApiClientResult(me, httpReq, response, opts.tag);
                 result.setContext(ApiClientResultContext.Success);
                 me.dbg("Status code: " + result.code, getLogTag());
                 for (var h in getOwnProperties(result.headers)) {
@@ -505,7 +505,7 @@ var ApiClient = (function (_super) {
                 invokeComplete(undefined, errCtx);
             }, function (err) {
                 me.err("[ERROR]: " + err, getLogTag());
-                var errCtx = new ApiClientError(me, httpReq, err, ApiClientErrorContext.ClientError);
+                var errCtx = new ApiClientError(me, httpReq, err, ApiClientErrorContext.ClientError, opts.tag);
                 if (!TypeUtils.isNullOrUndefined(me.errorAction)) {
                     errCtx.handled = true;
                     me.errorAction(errCtx);
@@ -518,7 +518,7 @@ var ApiClient = (function (_super) {
         }
         catch (e) {
             me.crit("[FATAL ERROR]: " + e, getLogTag());
-            var errCtx = new ApiClientError(me, httpReq, e, ApiClientErrorContext.Exception);
+            var errCtx = new ApiClientError(me, httpReq, e, ApiClientErrorContext.Exception, opts.tag);
             if (!TypeUtils.isNullOrUndefined(me.errorAction)) {
                 errCtx.handled = true;
                 me.errorAction(errCtx);
@@ -570,12 +570,13 @@ var ApiClient = (function (_super) {
 }(LoggerBase));
 var ApiClientCompleteContext = (function (_super) {
     __extends(ApiClientCompleteContext, _super);
-    function ApiClientCompleteContext(client, request, result, err) {
+    function ApiClientCompleteContext(client, request, result, err, tag) {
         _super.call(this);
         this._client = client;
         this._request = request;
         this._result = result;
         this._error = err;
+        this._tag = tag;
     }
     Object.defineProperty(ApiClientCompleteContext.prototype, "client", {
         get: function () {
@@ -611,17 +612,25 @@ var ApiClientCompleteContext = (function (_super) {
         enumerable: true,
         configurable: true
     });
+    Object.defineProperty(ApiClientCompleteContext.prototype, "tag", {
+        get: function () {
+            return this._tag;
+        },
+        enumerable: true,
+        configurable: true
+    });
     return ApiClientCompleteContext;
 }(LoggerBase));
 var ApiClientError = (function (_super) {
     __extends(ApiClientError, _super);
-    function ApiClientError(client, request, error, ctx) {
+    function ApiClientError(client, request, error, ctx, tag) {
         _super.call(this);
         this.handled = false;
         this._client = client;
         this._request = request;
         this._error = error;
         this._context = ctx;
+        this._tag = tag;
     }
     Object.defineProperty(ApiClientError.prototype, "client", {
         get: function () {
@@ -653,6 +662,13 @@ var ApiClientError = (function (_super) {
     Object.defineProperty(ApiClientError.prototype, "request", {
         get: function () {
             return this._request;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ApiClientError.prototype, "tag", {
+        get: function () {
+            return this._tag;
         },
         enumerable: true,
         configurable: true
@@ -689,11 +705,12 @@ var ApiClientResultContext = exports.ApiClientResultContext;
 var ApiClientErrorContext = exports.ApiClientErrorContext;
 var ApiClientResult = (function (_super) {
     __extends(ApiClientResult, _super);
-    function ApiClientResult(client, request, response) {
+    function ApiClientResult(client, request, response, tag) {
         _super.call(this);
         this._client = client;
         this._request = request;
         this._reponse = response;
+        this._tag = tag;
     }
     Object.defineProperty(ApiClientResult.prototype, "client", {
         get: function () {
@@ -783,6 +800,13 @@ var ApiClientResult = (function (_super) {
     ApiClientResult.prototype.setContext = function (newValue) {
         this._context = newValue;
     };
+    Object.defineProperty(ApiClientResult.prototype, "tag", {
+        get: function () {
+            return this._tag;
+        },
+        enumerable: true,
+        configurable: true
+    });
     return ApiClientResult;
 }(LoggerBase));
 /**

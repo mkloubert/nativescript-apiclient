@@ -273,7 +273,7 @@ class ApiClient extends LoggerBase implements IApiClient {
     
     public baseUrl : string;
     
-    public beforeSend(beforeAction : (opts : HTTP.HttpRequestOptions) => void) : ApiClient {
+    public beforeSend(beforeAction : (opts : HTTP.HttpRequestOptions, tag: any) => void) : ApiClient {
         this.beforeSendActions.push(beforeAction);
         return this;
     }
@@ -589,7 +589,7 @@ class ApiClient extends LoggerBase implements IApiClient {
         // before send actions
         for (var i = 0; i < me.beforeSendActions.length; i++) {
             var bsa = me.beforeSendActions[i];
-            bsa(httpRequestOpts);
+            bsa(httpRequestOpts, opts.tag);
         }
         
         var httpReq = new HttpRequest(me, httpRequestOpts);
@@ -618,14 +618,16 @@ class ApiClient extends LoggerBase implements IApiClient {
             
             if (!TypeUtils.isNullOrUndefined(me.completeAction)) {
                 me.completeAction(new ApiClientCompleteContext(me, httpReq,
-                                                               result, err));
+                                                               result, err,
+                                                               opts.tag));
             }
         };
 
         try {
             HTTP.request(httpRequestOpts)
                 .then(function (response) {
-                          var result = new ApiClientResult(me, httpReq, response);
+                          var result = new ApiClientResult(me, httpReq, response,
+                                                           opts.tag);
                           result.setContext(ApiClientResultContext.Success);
 
                           me.dbg("Status code: " + result.code, getLogTag());
@@ -670,7 +672,8 @@ class ApiClient extends LoggerBase implements IApiClient {
                           me.err("[ERROR]: " + err, getLogTag());
                           
                           var errCtx = new ApiClientError(me, httpReq,
-                                                          err, ApiClientErrorContext.ClientError);
+                                                          err, ApiClientErrorContext.ClientError,
+                                                          opts.tag);
                         
                           if (!TypeUtils.isNullOrUndefined(me.errorAction)) {
                               errCtx.handled = true;
@@ -688,7 +691,8 @@ class ApiClient extends LoggerBase implements IApiClient {
             me.crit("[FATAL ERROR]: " + e, getLogTag());
             
             var errCtx = new ApiClientError(me, httpReq,
-                                            e, ApiClientErrorContext.Exception);
+                                            e, ApiClientErrorContext.Exception,
+                                            opts.tag);
             
             if (!TypeUtils.isNullOrUndefined(me.errorAction)) {
                 errCtx.handled = true;
@@ -764,14 +768,18 @@ class ApiClientCompleteContext extends LoggerBase implements IApiClientCompleteC
     private _error: ApiClientError;
     private _request: HttpRequest;
     private _result: ApiClientResult;
+    private _tag: any;
     
-    constructor(client: ApiClient, request: HttpRequest, result: ApiClientResult, err: ApiClientError) {
+    constructor(client: ApiClient, request: HttpRequest, result: ApiClientResult, err: ApiClientError,
+                tag: any) {
+                    
         super();
         
         this._client = client;
         this._request = request;
         this._result = result;
         this._error = err;
+        this._tag = tag;
     }
     
     public get client() : ApiClient {
@@ -802,6 +810,10 @@ class ApiClientCompleteContext extends LoggerBase implements IApiClientCompleteC
     public get result(): ApiClientResult {
         return this._result;
     }
+    
+    public get tag(): any {
+        return this._tag;
+    }
 }
 
 class ApiClientError extends LoggerBase implements IApiClientError {
@@ -809,14 +821,17 @@ class ApiClientError extends LoggerBase implements IApiClientError {
     private _context: ApiClientErrorContext;
     private _error: any;
     private _request: HttpRequest;
+    private _tag: any;
     
-    constructor(client : ApiClient, request: HttpRequest, error: any, ctx: ApiClientErrorContext) {
+    constructor(client : ApiClient, request: HttpRequest, error: any, ctx: ApiClientErrorContext,
+                tag: any) {
         super();
         
         this._client = client;
         this._request = request;
         this._error = error;
         this._context = ctx;
+        this._tag = tag;
     }
     
     public get client(): IApiClient {
@@ -848,6 +863,10 @@ class ApiClientError extends LoggerBase implements IApiClientError {
     
     public get request() : HttpRequest {
         return this._request;
+    }
+    
+    public get tag() : any {
+        return this._tag;
     }
 }
 
@@ -886,13 +905,16 @@ class ApiClientResult extends LoggerBase implements IApiClientResult {
     private _context: ApiClientResultContext;
     private _reponse: HTTP.HttpResponse;
     private _request: HttpRequest;
+    private _tag: any;
     
-    constructor(client : ApiClient, request: HttpRequest, response: HTTP.HttpResponse) {
+    constructor(client : ApiClient, request: HttpRequest, response: HTTP.HttpResponse,
+                tag: any) {
         super();
         
         this._client = client;
         this._request = request;
         this._reponse = response;
+        this._tag = tag;
     }
     
     public get client() : ApiClient {
@@ -978,6 +1000,10 @@ class ApiClientResult extends LoggerBase implements IApiClientResult {
     
     public setContext(newValue : ApiClientResultContext) {
         this._context = newValue;
+    }
+    
+    public get tag() : any {
+        return this._tag;
     }
 }
 
@@ -1540,7 +1566,7 @@ export interface IApiClient {
 /**
  * Describes a context of a "complete" action.
  */
-export interface IApiClientCompleteContext extends ILogger {
+export interface IApiClientCompleteContext extends ILogger, ITagProvider {
     /**
      * Gets the underlying API client.
      * 
@@ -1686,7 +1712,7 @@ export interface IApiClientConfig {
 /**
  * Describes an error context of an API call.
  */
-export interface IApiClientError extends ILogger {
+export interface IApiClientError extends ILogger, ITagProvider {
     /**
      * Gets the underlying client.
      * 
@@ -1726,7 +1752,7 @@ export interface IApiClientError extends ILogger {
 /**
  * Describes an API result.
  */
-export interface IApiClientResult extends ILogger {
+export interface IApiClientResult extends ILogger, ITagProvider {
     /**
      * Gets the underlying API client.
      * 
@@ -2073,43 +2099,78 @@ export interface ILogger {
 export interface IRequestOptions {
     /**
      * Gets the authorizer.
+     * 
+     * @property
      */
     authorizer? : IAuthorizer;
     
     /**
      * Gets the content.
+     * 
+     * @property
      */
     content?: any;
     
     /**
      * Gets the name of the encoding.
+     * 
+     * @property
      */
     encoding?: string;
     
     /**
      * Gets the list of request headers.
+     * 
+     * @property
      */
     headers? : any;
     
     /**
      * Gets the URL params to set.
+     * 
+     * @property
      */
     params?: any;
     
     /**
      * Gets the params for the route to set.
+     * 
+     * @property
      */
     routeParams?: any;
     
     /**
+     * Gets the global object that should be used in any callback.
+     * 
+     * @property
+     */
+    tag?: any;
+    
+    /**
      * Gets the timeout in millisecons.
+     * 
+     * @property
      */
     timeout?: number;
     
     /**
      * Gets request type.
+     * 
+     * @property
      */
     type?: HttpRequestType;
+}
+
+/**
+ * Describes an object that stores a global value.
+ */
+export interface ITagProvider {
+    /**
+     * Gets the value that should be linked with that instance.
+     * 
+     * @property
+     */
+    tag: any;
 }
 
 /**

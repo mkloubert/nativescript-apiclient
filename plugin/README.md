@@ -57,7 +57,9 @@ var client = ApiClient.newClient({
     route: "{id}",  
 });
 
-client.beforeSend(function(opts: HTTP.HttpRequestOptions) {
+client.beforeSend(function(opts: HTTP.HttpRequestOptions, tag: any) {
+                      console.log("Loading user: " + tag);
+                      
                       // prepare the request here
                   })
       .clientError(function(result: ApiClient.IApiClientResult) {
@@ -101,7 +103,10 @@ for (var userId = 1; userId <= 100; userId++) {
         // route parameters
         routeParams: {
             id: userId  // {id}
-        }
+		},
+        
+        // global value for all callbacks 
+        tag: userId
     });
 }
 ```
