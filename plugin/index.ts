@@ -32,9 +32,6 @@ import Xml = require("xml");
  * A basic logger.
  */
 export abstract class LoggerBase implements ILogger {
-    constructor() {
-    }
-    
     /** @inheritdoc */
     public alert(msg : any, tag?: string, priority?: LogPriority) : LoggerBase {        
         return this.log(msg, tag,
@@ -470,17 +467,7 @@ class ApiClient extends LoggerBase implements IApiClient {
             
             url += route;
         }
-        
-        var invokeComplete = function(result: ApiClientResult, err: ApiClientError) {
-            if (!TypeUtils.isNullOrUndefined(result)) {
-                result.setContext(ApiClientResultContext.Complete);
-            }
-            
-            if (!TypeUtils.isNullOrUndefined(me.completeAction)) {
-                me.completeAction(new ApiClientCompleteContext(me, result, err));
-            }
-        };
-        
+
         var httpRequestOpts : any = {};
         httpRequestOpts.headers = {};
         
@@ -605,6 +592,8 @@ class ApiClient extends LoggerBase implements IApiClient {
             bsa(httpRequestOpts);
         }
         
+        var httpReq = new HttpRequest(me, httpRequestOpts);
+        
         me.dbg("URL: " + httpRequestOpts.url, "HttpRequestOptions");
         me.dbg("Method: " + httpRequestOpts.method, "HttpRequestOptions");
 
@@ -621,11 +610,22 @@ class ApiClient extends LoggerBase implements IApiClient {
         var getLogTag = function() : string {
             return "HttpRequest::" + httpRequestOpts.url;
         };
+        
+        var invokeComplete = function(result: ApiClientResult, err: ApiClientError) {
+            if (!TypeUtils.isNullOrUndefined(result)) {
+                result.setContext(ApiClientResultContext.Complete);
+            }
+            
+            if (!TypeUtils.isNullOrUndefined(me.completeAction)) {
+                me.completeAction(new ApiClientCompleteContext(me, httpReq,
+                                                               result, err));
+            }
+        };
 
         try {
             HTTP.request(httpRequestOpts)
                 .then(function (response) {
-                          var result = new ApiClientResult(me, response);
+                          var result = new ApiClientResult(me, httpReq, response);
                           result.setContext(ApiClientResultContext.Success);
 
                           me.dbg("Status code: " + result.code, getLogTag());
@@ -669,7 +669,7 @@ class ApiClient extends LoggerBase implements IApiClient {
                       function (err) {
                           me.err("[ERROR]: " + err, getLogTag());
                           
-                          var errCtx = new ApiClientError(me,
+                          var errCtx = new ApiClientError(me, httpReq,
                                                           err, ApiClientErrorContext.ClientError);
                         
                           if (!TypeUtils.isNullOrUndefined(me.errorAction)) {
@@ -687,7 +687,7 @@ class ApiClient extends LoggerBase implements IApiClient {
         catch (e) {
             me.crit("[FATAL ERROR]: " + e, getLogTag());
             
-            var errCtx = new ApiClientError(me,
+            var errCtx = new ApiClientError(me, httpReq,
                                             e, ApiClientErrorContext.Exception);
             
             if (!TypeUtils.isNullOrUndefined(me.errorAction)) {
@@ -759,13 +759,17 @@ class ApiClient extends LoggerBase implements IApiClient {
     }
 }
 
-class ApiClientCompleteContext implements IApiClientCompleteContext {    
-    private _client : ApiClient;
-    private _error : ApiClientError;
-    private _result : ApiClientResult;
+class ApiClientCompleteContext extends LoggerBase implements IApiClientCompleteContext {    
+    private _client: ApiClient;
+    private _error: ApiClientError;
+    private _request: HttpRequest;
+    private _result: ApiClientResult;
     
-    constructor(client: ApiClient, result: ApiClientResult, err: ApiClientError) {
+    constructor(client: ApiClient, request: HttpRequest, result: ApiClientResult, err: ApiClientError) {
+        super();
+        
         this._client = client;
+        this._request = request;
         this._result = result;
         this._error = err;
     }
@@ -774,8 +778,25 @@ class ApiClientCompleteContext implements IApiClientCompleteContext {
         return this._client;
     }
     
+    protected createLogMessage(msg: any, tag: string,
+                               category : LogCategory, priority : LogPriority) : ILogMessage {
+        
+        return new LogMessage(LogSource.Complete,
+                              new Date(),
+                              msg, tag,
+                              category, priority);
+    }
+    
     public get error(): ApiClientError {
         return this._error;
+    }
+    
+    protected onLog(msg: ILogMessage) {
+        invokeLogActions(this._client, msg);
+    }
+    
+    public get request(): HttpRequest {
+        return this._request;
     }
     
     public get result(): ApiClientResult {
@@ -784,13 +805,16 @@ class ApiClientCompleteContext implements IApiClientCompleteContext {
 }
 
 class ApiClientError extends LoggerBase implements IApiClientError {
-    private _client : ApiClient;
-    private _context : ApiClientErrorContext;
-    private _error : any;
+    private _client: ApiClient;
+    private _context: ApiClientErrorContext;
+    private _error: any;
+    private _request: HttpRequest;
     
-    constructor(client : ApiClient, error: any, ctx: ApiClientErrorContext) {
+    constructor(client : ApiClient, request: HttpRequest, error: any, ctx: ApiClientErrorContext) {
         super();
         
+        this._client = client;
+        this._request = request;
         this._error = error;
         this._context = ctx;
     }
@@ -821,10 +845,24 @@ class ApiClientError extends LoggerBase implements IApiClientError {
     protected onLog(msg : ILogMessage) {
         invokeLogActions(this._client, msg);
     }
+    
+    public get request() : HttpRequest {
+        return this._request;
+    }
 }
 
+/**
+ * List of API client result contextes.
+ */
 export enum ApiClientResultContext {
+    /**
+     * "success" action.
+     */
     Success,
+    
+    /**
+     * "completed" action.
+     */
     Complete
 }
 
@@ -844,14 +882,16 @@ export enum ApiClientErrorContext {
 }
 
 class ApiClientResult extends LoggerBase implements IApiClientResult {
-    private _client : ApiClient;
-    private _context : ApiClientResultContext;
-    private _reponse : HTTP.HttpResponse;
+    private _client: ApiClient;
+    private _context: ApiClientResultContext;
+    private _reponse: HTTP.HttpResponse;
+    private _request: HttpRequest;
     
-    constructor(client : ApiClient, response: HTTP.HttpResponse) {
+    constructor(client : ApiClient, request: HttpRequest, response: HTTP.HttpResponse) {
         super();
         
         this._client = client;
+        this._request = request;
         this._reponse = response;
     }
     
@@ -926,6 +966,10 @@ class ApiClientResult extends LoggerBase implements IApiClientResult {
     
     protected onLog(msg : ILogMessage) {
         invokeLogActions(this._client, msg);
+    }
+    
+    public get request() : HttpRequest {
+        return this._request;
     }
     
     public get response() : HTTP.HttpResponse {
@@ -1022,6 +1066,36 @@ export enum HttpMethod {
     TRACE,
     OPTIONS,
     CONNECT
+}
+
+class HttpRequest implements IHttpRequest {
+    private _client: ApiClient;
+    private _opts: HTTP.HttpRequestOptions;
+    
+    constructor(client: ApiClient, reqOpts : HTTP.HttpRequestOptions) {
+        this._client = client;
+        this._opts = reqOpts;
+    }
+    
+    public get body() : any {
+        return this._opts.content;
+    }
+    
+    public get client() : ApiClient {
+        return this._client;
+    }
+    
+    public get headers(): any {
+        return this._opts.headers;
+    }
+    
+    public get method(): string {
+        return this._opts.method;
+    }
+    
+    public get url(): string {
+        return this._opts.url;
+    }
 }
 
 /**
@@ -1466,7 +1540,7 @@ export interface IApiClient {
 /**
  * Describes a context of a "complete" action.
  */
-export interface IApiClientCompleteContext {
+export interface IApiClientCompleteContext extends ILogger {
     /**
      * Gets the underlying API client.
      * 
@@ -1480,6 +1554,13 @@ export interface IApiClientCompleteContext {
      * @property
      */
     error?: IApiClientError;
+    
+    /**
+     * Gets the underlying HTTP request.
+     * 
+     * @property
+     */
+    request: IHttpRequest;
     
     /**
      * Gets the API result (if defined).
@@ -1609,7 +1690,7 @@ export interface IApiClientError extends ILogger {
     /**
      * Gets the underlying client.
      * 
-     * @property.
+     * @property
      */
     client: IApiClient;
     
@@ -1633,6 +1714,13 @@ export interface IApiClientError extends ILogger {
      * @property
      */
     handled: boolean;
+    
+    /**
+     * Gets the underlying HTTP request.
+     * 
+     * @property
+     */
+    request: IHttpRequest;
 }
 
 /**
@@ -1712,6 +1800,13 @@ export interface IApiClientResult extends ILogger {
     getString() : string;
     
     /**
+     * Gets the information about the request.
+     * 
+     * @property
+     */
+    request: IHttpRequest;
+    
+    /**
      * Gets the raw response.
      * 
      * @property
@@ -1729,6 +1824,38 @@ export interface IAuthorizer {
      * @param {HTTP.HttpRequestOptions} reqOpts The request options.
      */
     prepare(reqOpts: HTTP.HttpRequestOptions);
+}
+
+/**
+ * Describes an object that stores information about a HTTP request.
+ */
+export interface IHttpRequest {
+    /**
+     * Gets the raw content that is send to the API.
+     */
+    body: any;
+    
+    /**
+     * Gets the underlying client.
+     * 
+     * @property
+     */
+    client: IApiClient;
+    
+    /**
+     * Gets the list of request headers.
+     */
+    headers: any;
+    
+    /**
+     * Gets the HTTP method.
+     */
+    method: string;
+    
+    /**
+     * Gets the URL.
+     */
+    url: string;
 }
 
 /**
@@ -2068,6 +2195,11 @@ export enum LogSource {
      * From API client.
      */
     Client,
+    
+    /**
+     * From "completed" action
+     */
+    Complete,
     
     /**
      * From IApiClientError object

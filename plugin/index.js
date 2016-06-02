@@ -348,14 +348,6 @@ var ApiClient = (function (_super) {
             });
             url += route;
         }
-        var invokeComplete = function (result, err) {
-            if (!TypeUtils.isNullOrUndefined(result)) {
-                result.setContext(ApiClientResultContext.Complete);
-            }
-            if (!TypeUtils.isNullOrUndefined(me.completeAction)) {
-                me.completeAction(new ApiClientCompleteContext(me, result, err));
-            }
-        };
         var httpRequestOpts = {};
         httpRequestOpts.headers = {};
         var urlParams;
@@ -455,6 +447,7 @@ var ApiClient = (function (_super) {
             var bsa = me.beforeSendActions[i];
             bsa(httpRequestOpts);
         }
+        var httpReq = new HttpRequest(me, httpRequestOpts);
         me.dbg("URL: " + httpRequestOpts.url, "HttpRequestOptions");
         me.dbg("Method: " + httpRequestOpts.method, "HttpRequestOptions");
         for (var rp in routeParams) {
@@ -468,10 +461,18 @@ var ApiClient = (function (_super) {
         var getLogTag = function () {
             return "HttpRequest::" + httpRequestOpts.url;
         };
+        var invokeComplete = function (result, err) {
+            if (!TypeUtils.isNullOrUndefined(result)) {
+                result.setContext(ApiClientResultContext.Complete);
+            }
+            if (!TypeUtils.isNullOrUndefined(me.completeAction)) {
+                me.completeAction(new ApiClientCompleteContext(me, httpReq, result, err));
+            }
+        };
         try {
             HTTP.request(httpRequestOpts)
                 .then(function (response) {
-                var result = new ApiClientResult(me, response);
+                var result = new ApiClientResult(me, httpReq, response);
                 result.setContext(ApiClientResultContext.Success);
                 me.dbg("Status code: " + result.code, getLogTag());
                 for (var h in getOwnProperties(result.headers)) {
@@ -504,7 +505,7 @@ var ApiClient = (function (_super) {
                 invokeComplete(undefined, errCtx);
             }, function (err) {
                 me.err("[ERROR]: " + err, getLogTag());
-                var errCtx = new ApiClientError(me, err, ApiClientErrorContext.ClientError);
+                var errCtx = new ApiClientError(me, httpReq, err, ApiClientErrorContext.ClientError);
                 if (!TypeUtils.isNullOrUndefined(me.errorAction)) {
                     errCtx.handled = true;
                     me.errorAction(errCtx);
@@ -517,7 +518,7 @@ var ApiClient = (function (_super) {
         }
         catch (e) {
             me.crit("[FATAL ERROR]: " + e, getLogTag());
-            var errCtx = new ApiClientError(me, e, ApiClientErrorContext.Exception);
+            var errCtx = new ApiClientError(me, httpReq, e, ApiClientErrorContext.Exception);
             if (!TypeUtils.isNullOrUndefined(me.errorAction)) {
                 errCtx.handled = true;
                 me.errorAction(errCtx);
@@ -567,9 +568,12 @@ var ApiClient = (function (_super) {
     };
     return ApiClient;
 }(LoggerBase));
-var ApiClientCompleteContext = (function () {
-    function ApiClientCompleteContext(client, result, err) {
+var ApiClientCompleteContext = (function (_super) {
+    __extends(ApiClientCompleteContext, _super);
+    function ApiClientCompleteContext(client, request, result, err) {
+        _super.call(this);
         this._client = client;
+        this._request = request;
         this._result = result;
         this._error = err;
     }
@@ -580,9 +584,22 @@ var ApiClientCompleteContext = (function () {
         enumerable: true,
         configurable: true
     });
+    ApiClientCompleteContext.prototype.createLogMessage = function (msg, tag, category, priority) {
+        return new LogMessage(LogSource.Complete, new Date(), msg, tag, category, priority);
+    };
     Object.defineProperty(ApiClientCompleteContext.prototype, "error", {
         get: function () {
             return this._error;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    ApiClientCompleteContext.prototype.onLog = function (msg) {
+        invokeLogActions(this._client, msg);
+    };
+    Object.defineProperty(ApiClientCompleteContext.prototype, "request", {
+        get: function () {
+            return this._request;
         },
         enumerable: true,
         configurable: true
@@ -595,12 +612,14 @@ var ApiClientCompleteContext = (function () {
         configurable: true
     });
     return ApiClientCompleteContext;
-}());
+}(LoggerBase));
 var ApiClientError = (function (_super) {
     __extends(ApiClientError, _super);
-    function ApiClientError(client, error, ctx) {
+    function ApiClientError(client, request, error, ctx) {
         _super.call(this);
         this.handled = false;
+        this._client = client;
+        this._request = request;
         this._error = error;
         this._context = ctx;
     }
@@ -631,10 +650,26 @@ var ApiClientError = (function (_super) {
     ApiClientError.prototype.onLog = function (msg) {
         invokeLogActions(this._client, msg);
     };
+    Object.defineProperty(ApiClientError.prototype, "request", {
+        get: function () {
+            return this._request;
+        },
+        enumerable: true,
+        configurable: true
+    });
     return ApiClientError;
 }(LoggerBase));
+/**
+ * List of API client result contextes.
+ */
 (function (ApiClientResultContext) {
+    /**
+     * "success" action.
+     */
     ApiClientResultContext[ApiClientResultContext["Success"] = 0] = "Success";
+    /**
+     * "completed" action.
+     */
     ApiClientResultContext[ApiClientResultContext["Complete"] = 1] = "Complete";
 })(exports.ApiClientResultContext || (exports.ApiClientResultContext = {}));
 var ApiClientResultContext = exports.ApiClientResultContext;
@@ -654,9 +689,10 @@ var ApiClientResultContext = exports.ApiClientResultContext;
 var ApiClientErrorContext = exports.ApiClientErrorContext;
 var ApiClientResult = (function (_super) {
     __extends(ApiClientResult, _super);
-    function ApiClientResult(client, response) {
+    function ApiClientResult(client, request, response) {
         _super.call(this);
         this._client = client;
+        this._request = request;
         this._reponse = response;
     }
     Object.defineProperty(ApiClientResult.prototype, "client", {
@@ -730,6 +766,13 @@ var ApiClientResult = (function (_super) {
     ApiClientResult.prototype.onLog = function (msg) {
         invokeLogActions(this._client, msg);
     };
+    Object.defineProperty(ApiClientResult.prototype, "request", {
+        get: function () {
+            return this._request;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(ApiClientResult.prototype, "response", {
         get: function () {
             return this._reponse;
@@ -833,6 +876,48 @@ exports.BearerAuth = BearerAuth;
     HttpMethod[HttpMethod["CONNECT"] = 8] = "CONNECT";
 })(exports.HttpMethod || (exports.HttpMethod = {}));
 var HttpMethod = exports.HttpMethod;
+var HttpRequest = (function () {
+    function HttpRequest(client, reqOpts) {
+        this._client = client;
+        this._opts = reqOpts;
+    }
+    Object.defineProperty(HttpRequest.prototype, "body", {
+        get: function () {
+            return this._opts.content;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(HttpRequest.prototype, "client", {
+        get: function () {
+            return this._client;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(HttpRequest.prototype, "headers", {
+        get: function () {
+            return this._opts.headers;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(HttpRequest.prototype, "method", {
+        get: function () {
+            return this._opts.method;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(HttpRequest.prototype, "url", {
+        get: function () {
+            return this._opts.url;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    return HttpRequest;
+}());
 /**
  * List of known HTTP request / content types.
  */
@@ -991,13 +1076,17 @@ var LogPriority = exports.LogPriority;
      */
     LogSource[LogSource["Client"] = 0] = "Client";
     /**
+     * From "completed" action
+     */
+    LogSource[LogSource["Complete"] = 1] = "Complete";
+    /**
      * From IApiClientError object
      */
-    LogSource[LogSource["Error"] = 1] = "Error";
+    LogSource[LogSource["Error"] = 2] = "Error";
     /**
      * From IApiClientResult object
      */
-    LogSource[LogSource["Result"] = 2] = "Result";
+    LogSource[LogSource["Result"] = 3] = "Result";
 })(exports.LogSource || (exports.LogSource = {}));
 var LogSource = exports.LogSource;
 function getOwnProperties(obj) {
