@@ -138,7 +138,7 @@ The client will call the URL
 [GET]  https://api.example.com/users/5979/profile
 ```
 
-Parameter values can also be function, what means that the value that is returned by that functions is used as value:
+Parameter values can also be functions, what means that the value that is returned by that functions is used as value:
 
 ```typescript
 var getUserId = function() : number {
@@ -280,7 +280,7 @@ client.request("FOO", {
 
 ## Logging
 
-If you want to log inside your result / error callbacks, you must define one or not logger actions in a client:
+If you want to log inside your result / error callbacks, you must define one or more logger actions in a client:
 
 ```typescript
 var client = ApiClient.newClient({
