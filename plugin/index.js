@@ -198,7 +198,9 @@ var ApiClient = (function (_super) {
         if (!TypeUtils.isNullOrUndefined(cfg.if)) {
             for (var i = 0; i < cfg.if.length; i++) {
                 var ie = cfg.if[i];
-                this.if(ie.predicate, ie.action);
+                if (!TypeUtils.isNullOrUndefined(ie)) {
+                    this.if(ie.predicate, ie.action);
+                }
             }
         }
     }
