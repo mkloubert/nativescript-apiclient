@@ -126,7 +126,7 @@ and start a request like this
 ```typescript
 client.get({
     routeParams: {
-        id: 5979  // {id},
+        id: 5979,  // {id}
         resource: "profile"  // {resource}
     }
 });
@@ -137,6 +137,37 @@ The client will call the URL
 ```
 [GET]  https://api.example.com/users/5979/profile
 ```
+
+Parameter values can also be function, what means that the value that is returned by that functions is used as value:
+
+```typescript
+var getUserId = function() : number {
+    // load the user ID from somewhere
+};
+
+client.get({
+    routeParams: {
+        id: getUserId,  // {id}
+        resource: "profile"  // {resource}
+    }
+});
+```
+
+A function must have the following structure:
+
+```typescript
+function (paramName: string, routeParams: any, match: string, formatExpr: string, funcDepth: string) : any {
+    return <THE-VALUE-TO-USE>;
+}
+```
+
+| Name | Description |
+| ---- | --------- |
+| paramName | The name of the parameter. For `{id}` this will be `id` |
+| routeParams | The list of submitted route parameters with their values. |
+| match | The complete (unhandled) expression of the argument. |
+| formatExpr | [NOT SUPPORTED YET] The optional format expression of the argument. For `{id:number}` this will be `number`. |
+| funcDepth | This value is `0` at the beginning. If you return a function in that function again, this will increase until you stop to return a function. |
 
 ## Authorization
 
