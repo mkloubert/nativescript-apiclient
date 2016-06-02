@@ -255,6 +255,14 @@ class ApiClient extends LoggerBase implements IApiClient {
         }
     }
     
+    public addFormatProvider(provider: (ctx: IFormatProviderContext) => any) : ApiClient {
+        if (!TypeUtils.isNullOrUndefined(provider)) {
+            this.formatProviders.push(provider);
+        }
+        
+        return this;
+    }
+    
     public addLogger(logAction : (ctx : ILogMessage) => void) : ApiClient {
         if (!TypeUtils.isNullOrUndefined(logAction)) {
             this.logActions.push(logAction);
@@ -311,6 +319,8 @@ class ApiClient extends LoggerBase implements IApiClient {
     }
     
     public errorAction : (ctx : IApiClientError) => void;
+    
+    public formatProviders = [];
     
     public forbidden(forbiddenAction : (result : IApiClientResult) => void) : ApiClient {
         return this.status(403, forbiddenAction);
@@ -458,6 +468,23 @@ class ApiClient extends LoggerBase implements IApiClient {
                     paramValue = paramValue(paramName, routeParams, match, formatExpr, ++funcDepth);
                 }
                 
+                if (formatSeparator === ':') {
+                    // use format providers
+                    
+                    for (var i = 0; i < me.formatProviders.length; i++) {
+                        var fp = me.formatProviders[i];
+                        var fpCtx = new FormatProviderContext(formatExpr, paramValue);
+                        
+                        var fpResult = fp(fpCtx);
+                        if (fpCtx.handled) {
+                            // handled: first wins
+                    
+                            paramValue = fpResult;
+                            break;
+                        }
+                    }
+                }
+                
                 if (paramValue === undefined) {
                     throw "Route parameter '" + paramName + "' is NOT defined!";
                 }
@@ -495,7 +522,15 @@ class ApiClient extends LoggerBase implements IApiClient {
                         urlParamSuffix += "&";
                     }
 
-                    urlParamSuffix += up + "=" + urlParams[up];
+                    var urlParamName = up;
+                    
+                    var funcDepth = 0;
+                    var urlParamValue = urlParams[up];
+                    while (typeof urlParamValue === "function") {
+                        urlParamValue = urlParamValue(urlParamName, i, funcDepth++);
+                    }
+
+                    urlParamSuffix += urlParamName + "=" + urlParamValue;
                     ++i;
                 }
                 
@@ -1079,6 +1114,26 @@ export class BearerAuth implements IAuthorizer {
     }
 }
 
+class FormatProviderContext implements IFormatProviderContext {
+    private _expression: string;
+    private _value: any;
+    
+    constructor(expr: string, val: any) {
+        this._expression = expr;
+        this._value = val;
+    }
+    
+    public get expression(): string {
+        return this._expression;
+    }
+    
+    public handled: boolean = false;
+    
+    public get value(): any {
+        return this._value;
+    }
+}
+
 /**
  * List of known HTTP request methods.
  */
@@ -1227,6 +1282,15 @@ export interface IAjaxResult<TData> {
  * Describes an API client.
  */
 export interface IApiClient {
+    /**
+     * Adds a callback that can be used to format values of route parameters, e.g.
+     * 
+     * @chainable
+     * 
+     * @param {Function} provider The callback that formats values.
+     */
+    addFormatProvider(provider: (ctx: IFormatProviderContext) => any) : IApiClient;
+    
     /**
      * Adds a log action.
      * 
@@ -1850,6 +1914,32 @@ export interface IAuthorizer {
      * @param {HTTP.HttpRequestOptions} reqOpts The request options.
      */
     prepare(reqOpts: HTTP.HttpRequestOptions);
+}
+
+/**
+ * Describes a format provider context.
+ */
+export interface IFormatProviderContext {
+    /**
+     * Gets the format expression.
+     * 
+     * @property
+     */
+    expression: string;
+    
+    /**
+     * Gets if the expression has been handled or not.
+     * 
+     * @property
+     */
+    handled: boolean;
+    
+    /**
+     * Gets the underlying (unhandled) value.
+     * 
+     * @property
+     */
+    value: any;
 }
 
 /**

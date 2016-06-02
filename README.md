@@ -137,7 +137,7 @@ client.get({
 });
 ```
 
-The client will call the URL
+the client will call the URL
 
 ```
 [GET]  https://api.example.com/users/5979/profile
@@ -173,6 +173,91 @@ function (paramName: string, routeParams: any, match: string, formatExpr: string
 | match | The complete (unhandled) expression of the argument. |
 | formatExpr | [NOT SUPPORTED YET] The optional format expression of the argument. For `{id:number}` this will be `number`. |
 | funcDepth | This value is `0` at the beginning. If you return a function in that function again, this will increase until you stop to return a function. |
+
+### Formatting values
+
+Followed by a `:` char a route parameter definition can additionally contain a "format expression".
+
+These expressions can help you to parse and format parameter values.
+
+The first step to do this is to define a so called "format provider" callback in a client:
+
+```typescript
+client.addFormatProvider((ctx : ApiClient.IFormatProvider) => {
+    var toStringSafe = function() : string { 
+        return ctx.value ? ctx.value.toString() : "";
+    };
+
+    if (ctx.expression === "upper") {    
+        ctx.handled = true;
+        return toStringSafe().toLowerCase();  // the new value
+    }
+    else if (ctx.expression === "number") {
+        var n = parseInt(toStringSafe().trim());
+        if (isNaN(n)) {
+            throw "'" + ctx.value + "' is NOT a number!";
+        }
+        
+        ctx.handled = true;
+        return n;
+    }
+});
+```
+
+Here we defined the two expressions `upper` (convert to upper case chars) and `number` (keep sure to have a valid number).
+
+To use them you can define a route like this:
+
+```
+{id:number}/{resource:upper}
+```
+
+Now if you setup your client
+
+```typescript
+var client = ApiClient.newClient({
+    baseUrl: "https://api.example.com/users",
+    route: "{id:number}/{resource:upper}",  
+});
+```
+
+and start a request like this
+
+```typescript
+client.get({
+    routeParams: {
+        id: 5979,
+        resource: "profile"
+    }
+});
+```
+
+the client will call the URL
+
+```
+[GET]  https://api.example.com/users/5979/PROFILE
+```
+
+The `ctx` object in the format provider call of `addFormatProvider()` has the following structure:
+
+```typescript
+export interface IFormatProviderContext {
+    /**
+     * Gets the format expression.
+     */
+    expression: string;
+    
+    /**
+     * Gets if the expression has been handled or not.
+     */
+    handled: boolean;
+    
+    /**
+     * Gets the underlying (unhandled) value.
+     */
+    value: any;
+}
+```
 
 ## Authorization
 
@@ -490,6 +575,35 @@ The client will call the URL
 [GET]  https://api.example.com/users?id=23979&resource=profile
 ```
 
+Like route parameters you can also use functions for defining URL parameters:
+
+```typescript
+var getUserId = function() : number {
+    // load the user ID from somewhere
+};
+
+client.get({
+    params: {
+        id: getUserId,  // {id}
+        resource: "profile"  // {resource}
+    }
+});
+```
+
+A function must have the following structure:
+
+```typescript
+function (paramName: string, index: number, funcDepth: string) : any {
+    return <THE-VALUE-TO-USE>;
+}
+```
+
+| Name | Description |
+| ---- | --------- |
+| paramName | The name of the parameter. For `{id}` this will be `id` |
+| index | The zero based index of the handled URL parameter. |
+| funcDepth | This value is `0` at the beginning. If you return a function in that function again, this will increase until you stop to return a function. |
+
 ## Responses
 
 ### Callbacks
@@ -613,7 +727,34 @@ export interface IApiClientError extends ILogger {
 }
 ```
 
-#### Short hand callbacks
+#### Conditional callbacks
+
+You can define callbacks for any kind of conditions.
+
+A generic way to do this is to use the `if()` method:
+
+```javascript
+client.if(function(result : IApiClientResult) : boolean {
+              // invoke if 'X-My-Custom-Header' is defined
+              return undefined !== result.headers["X-My-Custom-Header"];
+          },
+          function(result : IApiClientResult) {
+              // handle the response
+          });
+```
+
+If no condition matches, the callback defined by `success()` method is used.
+
+For specific status codes you can use the `ifStatus()` method:
+
+```javascript
+client.ifStatus(500,
+                function(result : IApiClientResult) {
+                    // handle the internal server error
+                });
+```
+
+##### Short hand callbacks
 
 ```typescript
 client.clientError(function(result : ApiClient.IApiClientResult) {
@@ -649,30 +790,3 @@ The following methods are also supported:
 | unauthorized | Handles a request with status code `401`. |
 | unsupportedMediaType | Handles a request with status code `415`. |
 | uriTooLong | Handles a request with status code `414`. |
-
-#### Conditional callbacks
-
-You can define callbacks for any kind of conditions.
-
-A generic way to do this is to use the `if()` method:
-
-```javascript
-client.if(function(result : IApiClientResult) : boolean {
-              // invoke if 'X-My-Custom-Header' is defined
-              return undefined !== result.headers["X-My-Custom-Header"];
-          },
-          function(result : IApiClientResult) {
-              // handle the response
-          });
-```
-
-If no condition matches, the callback defined by `success()` method is used.
-
-For specific status codes you can use the `ifStatus()` method:
-
-```javascript
-client.ifStatus(500,
-                function(result : IApiClientResult) {
-                    // handle the internal server error
-                });
-```

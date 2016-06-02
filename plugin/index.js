@@ -120,6 +120,7 @@ var ApiClient = (function (_super) {
     function ApiClient(cfg) {
         _super.call(this);
         this.beforeSendActions = [];
+        this.formatProviders = [];
         this.ifEntries = [];
         this.logActions = [];
         // base URL
@@ -202,6 +203,12 @@ var ApiClient = (function (_super) {
             }
         }
     }
+    ApiClient.prototype.addFormatProvider = function (provider) {
+        if (!TypeUtils.isNullOrUndefined(provider)) {
+            this.formatProviders.push(provider);
+        }
+        return this;
+    };
     ApiClient.prototype.addLogger = function (logAction) {
         if (!TypeUtils.isNullOrUndefined(logAction)) {
             this.logActions.push(logAction);
@@ -341,6 +348,19 @@ var ApiClient = (function (_super) {
                 while (typeof paramValue === "function") {
                     paramValue = paramValue(paramName, routeParams, match, formatExpr, ++funcDepth);
                 }
+                if (formatSeparator === ':') {
+                    // use format providers
+                    for (var i = 0; i < me.formatProviders.length; i++) {
+                        var fp = me.formatProviders[i];
+                        var fpCtx = new FormatProviderContext(formatExpr, paramValue);
+                        var fpResult = fp(fpCtx);
+                        if (fpCtx.handled) {
+                            // handled: first wins
+                            paramValue = fpResult;
+                            break;
+                        }
+                    }
+                }
                 if (paramValue === undefined) {
                     throw "Route parameter '" + paramName + "' is NOT defined!";
                 }
@@ -370,7 +390,13 @@ var ApiClient = (function (_super) {
                     if (i > 0) {
                         urlParamSuffix += "&";
                     }
-                    urlParamSuffix += up + "=" + urlParams[up];
+                    var urlParamName = up;
+                    var funcDepth = 0;
+                    var urlParamValue = urlParams[up];
+                    while (typeof urlParamValue === "function") {
+                        urlParamValue = urlParamValue(urlParamName, i, funcDepth++);
+                    }
+                    urlParamSuffix += urlParamName + "=" + urlParamValue;
                     ++i;
                 }
                 if (i > 0) {
@@ -885,6 +911,28 @@ var BearerAuth = (function () {
     return BearerAuth;
 }());
 exports.BearerAuth = BearerAuth;
+var FormatProviderContext = (function () {
+    function FormatProviderContext(expr, val) {
+        this.handled = false;
+        this._expression = expr;
+        this._value = val;
+    }
+    Object.defineProperty(FormatProviderContext.prototype, "expression", {
+        get: function () {
+            return this._expression;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(FormatProviderContext.prototype, "value", {
+        get: function () {
+            return this._value;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    return FormatProviderContext;
+}());
 /**
  * List of known HTTP request methods.
  */
