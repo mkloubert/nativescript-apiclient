@@ -70,9 +70,27 @@ client.clientError(function(result : ApiClient.IApiClientResult) {
                      // invoked after "result" and "error" actions
                  });
 
+var credentials = new ApiClient.BasicAuth("Marcel", "p@ssword!");
+
 for (var userId = 1; userId <= 100; userId++) {
     // start a GET request
+    // 
+    // [GET]  https://api.example.com/users/{id}?ver=1.6.6.6
     client.get({
+        authorizer: credentials,
+    
+        // request headers
+        headers: {
+            'X-MyHeader-TM': 5979,
+            'X-MyHeader-MK': 23979
+        },
+        
+        // URL parameters
+        params: {
+            ver: 1.6.6.6
+        },
+    
+        // route parameters
         routeParams: {
             id: userId  // {id}
         }
@@ -84,7 +102,7 @@ for (var userId = 1; userId <= 100; userId++) {
 
 Routes are suffixes for a base URL.
 
-You can define one or parameters inside that route, which are replaced when you starting a call.
+You can define one or parameters inside that route, which are replaced when you start a request.
 
 If you create an client like this
 
@@ -101,7 +119,7 @@ and start a request like this
 client.get({
     routeParams: {
         id: 5979  // {id},
-        resource: "profile"
+        resource: "profile"  // {resource}
     }
 });
 ```
@@ -110,6 +128,115 @@ The client will call the URL
 
 ```
 [GET]  https://api.example.com/users/5979/profile
+```
+
+## Authorization
+
+You can submit an optional `IAuthorizer` object when you start a request:
+
+```typescript
+interface IAuthorizer {
+    /**
+     * Prepares a HTTP request for authorization.
+     * 
+     * @param {HTTP.HttpRequestOptions} reqOpts The request options.
+     */
+    prepare(reqOpts: HTTP.HttpRequestOptions);
+}
+```
+
+The plugin provides the following implementations:
+
+### BasicAuth
+
+```typescript
+var authorizer = new ApiClient.AggregateAuthorizer();
+authorizer.addAuthorizers(new ApiClient.BasicAuth("Username", "Password"),
+                          new ApiClient.BearerAuth("MySecretToken"));
+```
+
+### BasicAuth
+
+```typescript
+var authorizer = new ApiClient.BasicAuth("Username", "Password");
+```
+
+### BearerAuth
+
+```typescript
+var authorizer = new ApiClient.BearerAuth("MySecretToken");
+```
+
+## Requests
+
+### GET
+
+```typescript
+// ?TM=5979&MMK=23979
+client.get({
+    params: {
+        TM: 5979,
+        MK: 23979
+    }
+});
+```
+
+### POST
+
+```typescript
+client.post({
+    content: {
+        id: 5979,
+        name: "Tanja"
+    },
+    
+    type: ApiClient.HttpRequestType.JSON
+});
+```
+
+### PUT
+
+```typescript
+client.put({
+    content: '<user><id>23979</id><name>Marcel</name></user>',
+    
+    type: ApiClient.HttpRequestType.XML
+});
+```
+
+### PATCH
+
+```typescript
+client.patch({
+    content: '<user id="241279"><name>Julia</name></user>',
+    
+    type: ApiClient.HttpRequestType.XML
+});
+```
+
+### DELETE
+
+```typescript
+client.post({
+    content: {
+        id: 221286
+    },
+    
+    type: ApiClient.HttpRequestType.JSON
+});
+```
+
+### Custom
+
+```typescript
+client.request("FOO", {
+    content: {
+        TM: 5979,
+        MK: 23979
+    },
+    
+    type: ApiClient.HttpRequestType.JSON
+});
 ```
 
 ## Logging
