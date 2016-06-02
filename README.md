@@ -41,6 +41,9 @@ import ApiClient = require("nativescript-apiclient");
 ### Example
 
 ```typescript
+import ApiClient = require("nativescript-apiclient");
+import HTTP = require("http");
+
 interface IUser {
     displayName: string;
     id?: number;
@@ -52,21 +55,24 @@ var client = ApiClient.newClient({
     route: "{id}",  
 });
 
-client.clientError(function(result : ApiClient.IApiClientResult) {
+client.beforeSend(function(opts: HTTP.HttpRequestOptions) {
+                      // prepare the request here
+                  })
+      .clientError(function(result: ApiClient.IApiClientResult) {
                        // handle all responses with status code 400 to 499
                    })
-      .serverError(function(result : ApiClient.IApiClientResult) {
+      .serverError(function(result: ApiClient.IApiClientResult) {
                        // handle all responses with status code 500 to 599
                    })
-      .success(function(result : ApiClient.IApiClientResult) {
+      .success(function(result: ApiClient.IApiClientResult) {
                     // handle all responses with status codes less than 400
                     
                     var user = result.getJSON<IUser>();
                })
-      .error(function(err : ApiClient.IApiClientError) {
+      .error(function(err: ApiClient.IApiClientError) {
                  // handle API client errors
              })
-      .completed(function(ctx : ApiClient.IApiClientCompleteContext) {
+      .completed(function(ctx: ApiClient.IApiClientCompleteContext) {
                      // invoked after "result" and "error" actions
                  });
 
