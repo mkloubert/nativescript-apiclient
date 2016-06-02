@@ -292,6 +292,13 @@ class ApiClient extends LoggerBase implements IApiClient {
         return this.ifStatus((code) => code >= 400 && code <= 499,
                              clientErrAction);
     }
+
+    public clientOrServerError(clientSrvErrAction : (result : IApiClientResult) => void): IApiClient {
+        this.clientError(clientSrvErrAction);
+        this.serverError(clientSrvErrAction);
+        
+        return this;
+    }
     
     public complete(completeAction : (ctx : IApiClientCompleteContext) => void) : ApiClient {
         this.completeAction = completeAction;
@@ -1342,6 +1349,15 @@ export interface IApiClient {
      * @param {Function} clientErrAction The action to invoke.
      */
     clientError(clientErrAction : (result : IApiClientResult) => void): IApiClient;
+    
+    /**
+     * Defines an action that is invoked on a status code between 400 and 599.
+     * 
+     * @chainable
+     * 
+     * @param {Function} clientSrvErrAction The action to invoke.
+     */
+    clientOrServerError(clientSrvErrAction : (result : IApiClientResult) => void): IApiClient;
     
     /**
      * Defines the "complete" action.

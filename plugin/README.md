@@ -171,7 +171,7 @@ function (paramName: string, routeParams: any, match: string, formatExpr: string
 | paramName | The name of the parameter. For `{id}` this will be `id` |
 | routeParams | The list of submitted route parameters with their values. |
 | match | The complete (unhandled) expression of the argument. |
-| formatExpr | [NOT SUPPORTED YET] The optional format expression of the argument. For `{id:number}` this will be `number`. |
+| formatExpr | The optional format expression of the argument. For `{id:number}` this will be `number`. |
 | funcDepth | This value is `0` at the beginning. If you return a function in that function again, this will increase until you stop to return a function. |
 
 ### Formatting values
@@ -776,6 +776,7 @@ The following methods are also supported:
 | ---- | --------- |
 | badGateway | Handles a request with status code `502`.  |
 | badRequest | Handles a request with status code `400`. |
+| clientOrServerError | Handles a request with a status code between `400` and `599`. |
 | forbidden | Handles a request with status code `403`. |
 | gone | Handles a request with status code `410`. |
 | internalServerError | Handles a request with status code `500`. |

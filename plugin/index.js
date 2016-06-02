@@ -228,6 +228,11 @@ var ApiClient = (function (_super) {
     ApiClient.prototype.clientError = function (clientErrAction) {
         return this.ifStatus(function (code) { return code >= 400 && code <= 499; }, clientErrAction);
     };
+    ApiClient.prototype.clientOrServerError = function (clientSrvErrAction) {
+        this.clientError(clientSrvErrAction);
+        this.serverError(clientSrvErrAction);
+        return this;
+    };
     ApiClient.prototype.complete = function (completeAction) {
         this.completeAction = completeAction;
         return this;
