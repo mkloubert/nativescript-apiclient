@@ -341,6 +341,8 @@ class ApiClient extends LoggerBase implements IApiClient {
         return this.status(410, goneAction);
     }
     
+    public headers: any;
+    
     public if(predicate: (ctx : IApiClientResult) => boolean,
               statusAction : (result : IApiClientResult) => void) : ApiClient {
         
@@ -403,6 +405,8 @@ class ApiClient extends LoggerBase implements IApiClient {
         invokeLogActions(this, msg);
     }
     
+    public params: any;
+    
     public patch(opts? : IRequestOptions) {
         return this.request("PATCH", opts);
     }
@@ -442,28 +446,30 @@ class ApiClient extends LoggerBase implements IApiClient {
                 url += "/";
             }
             
-            var routeParams : any;
+            // collect route parameters
+            var routeParams : {};
             if (!TypeUtils.isNullOrUndefined(opts)) {
-                var routeParamsTemp = getOwnProperties(opts.routeParams);
-                if (!TypeUtils.isNullOrUndefined(routeParamsTemp)) {
-                    routeParams = {};
+                var allRouteParams = [getOwnProperties(me.routeParams), getOwnProperties(opts.routeParams)];
+                for (var i = 0; i < allRouteParams.length; i++) {
+                    var routeParamsTemp = allRouteParams[i];
+                    if (TypeUtils.isNullOrUndefined(routeParamsTemp)) {
+                        continue;
+                    }
                     
+                    var alreadyHandledParamNames = {};
                     for (var rpt in routeParamsTemp) {
                         var routeParamName = rpt.toLowerCase().trim();
                         
-                        if (routeParams[routeParamName] !== undefined) {
+                        if (alreadyHandledParamNames[routeParamName] === true) {
                             throw "Route parameter '" + routeParamName + "' is ALREADY defined!";
                         }
                         
                         routeParams[routeParamName] = routeParamsTemp[rpt];
+                        alreadyHandledParamNames[routeParamName] = true;
                     }
                 }
             }
-            
-            if (TypeUtils.isNullOrUndefined(routeParams)) {
-                routeParams = {};
-            }
-            
+
             // parse route parameters
             route = route.replace(/{(([^\:]+))(\:)?([^}]*)}/g, function(match, paramName, formatSeparator, formatExpr) : string {
                 paramName = paramName.toLowerCase().trim();
@@ -509,9 +515,16 @@ class ApiClient extends LoggerBase implements IApiClient {
         
         if (!TypeUtils.isNullOrUndefined(opts)) {
             // request headers
-            var requestHeaders = getOwnProperties(opts.headers);
-            if (!TypeUtils.isNullOrUndefined(requestHeaders)) {
-                httpRequestOpts.headers = requestHeaders;
+            var allRequestHeaders = [getOwnProperties(me.headers), getOwnProperties(opts.headers)];
+            for (var i = 0; i < allRequestHeaders.length; i++) {
+                var requestHeaders = allRequestHeaders[i];
+                if (TypeUtils.isNullOrUndefined(requestHeaders)) {
+                    continue;
+                }
+                
+                for (var rqh in requestHeaders) {
+                    httpRequestOpts.headers[rqh] = requestHeaders[rqh];
+                }
             }
             
             // timeout
@@ -520,12 +533,17 @@ class ApiClient extends LoggerBase implements IApiClient {
             }
             
             // URL parameters
-            urlParams = getOwnProperties(opts.params);
-            if (!TypeUtils.isNullOrUndefined(urlParams)) {
-                var i = 0;
-                var urlParamSuffix = "";
+            var urlParamCount = 0;
+            var urlParamSuffix = "";
+            var allUrlParams = [getOwnProperties(me.params), getOwnProperties(opts.params)];
+            for (var i = 0; i < allUrlParams.length; i++) {
+                var urlParams = allUrlParams[i];
+                if (TypeUtils.isNullOrUndefined(urlParams)) {
+                    continue;
+                }
+
                 for (var up in urlParams) {
-                    if (i > 0) {
+                    if (urlParamCount > 0) {
                         urlParamSuffix += "&";
                     }
 
@@ -534,23 +552,19 @@ class ApiClient extends LoggerBase implements IApiClient {
                     var funcDepth = 0;
                     var urlParamValue = urlParams[up];
                     while (typeof urlParamValue === "function") {
-                        urlParamValue = urlParamValue(urlParamName, i, funcDepth++);
+                        urlParamValue = urlParamValue(urlParamName, urlParamCount, funcDepth++);
                     }
 
                     urlParamSuffix += urlParamName + "=" + urlParamValue;
-                    ++i;
-                }
-                
-                if (i > 0) {
-                    url += "?" + urlParamSuffix;
+                    ++urlParamCount;
                 }
             }
+            
+            if (urlParamCount > 0) {
+                url += "?" + urlParamSuffix;
+            }
         }
-        
-        if (TypeUtils.isNullOrUndefined(httpRequestOpts.headers)) {
-            httpRequestOpts.headers = {};
-        }
-        
+
         var content;
         var encoding = "utf-8";
         
@@ -749,7 +763,9 @@ class ApiClient extends LoggerBase implements IApiClient {
         }
     }
     
-    public route : string;
+    public route: string;
+    
+    public routeParams: any;
     
     public serverError(serverErrAction : (result : IApiClientResult) => void): ApiClient {
         return this.ifStatus((code) => code >= 500 && code <= 599,
@@ -1412,6 +1428,13 @@ export interface IApiClient {
     gone(goneAction : (result : IApiClientResult) => void) : IApiClient;
     
     /**
+     * Gets or sets the global request headers.
+     * 
+     * @property
+     */
+    headers: any;
+    
+    /**
      * Invokes an action if a predicate matches.
      * 
      * @chainable
@@ -1494,6 +1517,13 @@ export interface IApiClient {
     ok(okAction : (result : IApiClientResult) => void) : IApiClient;
     
     /**
+     * Gets or sets the global list of URL parameters.
+     * 
+     * @property
+     */
+    params: any;
+    
+    /**
      * Starts a PATCH request.
      * 
      * @param {IRequestOptions} [opts] The (additional) options.
@@ -1534,7 +1564,14 @@ export interface IApiClient {
     /**
      * Gets or sets the route.
      */
-    route : string;
+    route: string;
+    
+    /**
+     * Gets or sets the global list of route parameters.
+     * 
+     * @property
+     */
+    routeParams: any;
     
     /**
      * Defines an action that is invoked on a status code between 500 and 599.
@@ -1723,6 +1760,13 @@ export interface IApiClientConfig {
     forbidden?: (ctx : IApiClientResult) => void;
     
     /**
+     * Gets the global request headers to use.
+     * 
+     * @property
+     */
+    headers?: any;
+    
+    /**
      * Defines that actions to invoke if a reponse matches.
      */
     if? : IIfResponse[];
@@ -1754,11 +1798,25 @@ export interface IApiClientConfig {
     ok?: (ctx : IApiClientResult) => void;
     
     /**
+     * Gets the global URL parameters to use.
+     * 
+     * @property
+     */
+    params?: any;
+    
+    /**
      * Gets the optional route.
      * 
      * @property
      */
     route?: string;
+    
+    /**
+     * Gets the global route parameters to use.
+     * 
+     * @property
+     */
+    routeParams?: any;
     
     /**
      * Defines the action to handle a status code between 500 and 599.

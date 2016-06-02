@@ -328,22 +328,25 @@ var ApiClient = (function (_super) {
             if ("/" !== url.substring(url.length - 1)) {
                 url += "/";
             }
+            // collect route parameters
             var routeParams;
             if (!TypeUtils.isNullOrUndefined(opts)) {
-                var routeParamsTemp = getOwnProperties(opts.routeParams);
-                if (!TypeUtils.isNullOrUndefined(routeParamsTemp)) {
-                    routeParams = {};
+                var allRouteParams = [getOwnProperties(me.routeParams), getOwnProperties(opts.routeParams)];
+                for (var i = 0; i < allRouteParams.length; i++) {
+                    var routeParamsTemp = allRouteParams[i];
+                    if (TypeUtils.isNullOrUndefined(routeParamsTemp)) {
+                        continue;
+                    }
+                    var alreadyHandledParamNames = {};
                     for (var rpt in routeParamsTemp) {
                         var routeParamName = rpt.toLowerCase().trim();
-                        if (routeParams[routeParamName] !== undefined) {
+                        if (alreadyHandledParamNames[routeParamName] === true) {
                             throw "Route parameter '" + routeParamName + "' is ALREADY defined!";
                         }
                         routeParams[routeParamName] = routeParamsTemp[rpt];
+                        alreadyHandledParamNames[routeParamName] = true;
                     }
                 }
-            }
-            if (TypeUtils.isNullOrUndefined(routeParams)) {
-                routeParams = {};
             }
             // parse route parameters
             route = route.replace(/{(([^\:]+))(\:)?([^}]*)}/g, function (match, paramName, formatSeparator, formatExpr) {
@@ -378,39 +381,46 @@ var ApiClient = (function (_super) {
         var urlParams;
         if (!TypeUtils.isNullOrUndefined(opts)) {
             // request headers
-            var requestHeaders = getOwnProperties(opts.headers);
-            if (!TypeUtils.isNullOrUndefined(requestHeaders)) {
-                httpRequestOpts.headers = requestHeaders;
+            var allRequestHeaders = [getOwnProperties(me.headers), getOwnProperties(opts.headers)];
+            for (var i = 0; i < allRequestHeaders.length; i++) {
+                var requestHeaders = allRequestHeaders[i];
+                if (TypeUtils.isNullOrUndefined(requestHeaders)) {
+                    continue;
+                }
+                for (var rqh in requestHeaders) {
+                    httpRequestOpts.headers[rqh] = requestHeaders[rqh];
+                }
             }
             // timeout
             if (!TypeUtils.isNullOrUndefined(opts.timeout)) {
                 httpRequestOpts.timeout = opts.timeout;
             }
             // URL parameters
-            urlParams = getOwnProperties(opts.params);
-            if (!TypeUtils.isNullOrUndefined(urlParams)) {
-                var i = 0;
-                var urlParamSuffix = "";
+            var urlParamCount = 0;
+            var urlParamSuffix = "";
+            var allUrlParams = [getOwnProperties(me.params), getOwnProperties(opts.params)];
+            for (var i = 0; i < allUrlParams.length; i++) {
+                var urlParams = allUrlParams[i];
+                if (TypeUtils.isNullOrUndefined(urlParams)) {
+                    continue;
+                }
                 for (var up in urlParams) {
-                    if (i > 0) {
+                    if (urlParamCount > 0) {
                         urlParamSuffix += "&";
                     }
                     var urlParamName = up;
                     var funcDepth = 0;
                     var urlParamValue = urlParams[up];
                     while (typeof urlParamValue === "function") {
-                        urlParamValue = urlParamValue(urlParamName, i, funcDepth++);
+                        urlParamValue = urlParamValue(urlParamName, urlParamCount, funcDepth++);
                     }
                     urlParamSuffix += urlParamName + "=" + urlParamValue;
-                    ++i;
-                }
-                if (i > 0) {
-                    url += "?" + urlParamSuffix;
+                    ++urlParamCount;
                 }
             }
-        }
-        if (TypeUtils.isNullOrUndefined(httpRequestOpts.headers)) {
-            httpRequestOpts.headers = {};
+            if (urlParamCount > 0) {
+                url += "?" + urlParamSuffix;
+            }
         }
         var content;
         var encoding = "utf-8";
