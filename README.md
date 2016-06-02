@@ -540,4 +540,65 @@ export interface IApiClientError extends ILogger {
 }
 ```
 
+#### Short hand callbacks
+
+```typescript
+client.clientError(function(result : ApiClient.IApiClientResult) {
+                       // handle status codes between 400 and 499
+                   });
+                   
+client.ok(function(result : ApiClient.IApiClientResult) {
+                       // handle status codes with 200, 204 or 205
+                   });
+                   
+client.serverError(function(result : ApiClient.IApiClientResult) {
+                       // handle status codes between 500 and 599
+                   });
+```
+
+The following methods are also supported:
+
+| Name | Description |
+| ---- | --------- |
+| badGateway | Handles a request with status code `502`.  |
+| badRequest | Handles a request with status code `400`. |
+| forbidden | Handles a request with status code `403`. |
+| gone | Handles a request with status code `410`. |
+| internalServerError | Handles a request with status code `500`. |
+| locked | Handles a request with status code `423`. |
+| methodNotAllowed | Handles a request with status code `405`. |
+| notFound | Handles a request with status code `404`. |
+| notImplemented | Handles a request with status code `501`. |
+| serviceUnavailable | Handles a request with status code `503`. |
+| succeededRequest | Handles a request with a status code between `200` and `299`. |
+| tooManyRequests | Handles a request with status code `429`. |
+| unauthorized | Handles a request with status code `401`. |
+| unsupportedMediaType | Handles a request with status code `415`. |
+| uriTooLong | Handles a request with status code `414`. |
+
 ##### Conditional callbacks
+
+You can define callbacks for any kind of conditions.
+
+A generic way to do this is to use the `if()` method:
+
+```javascript
+client.if(function(result : IApiClientResult) : boolean {
+              // invoke if 'X-My-Custom-Header' is defined
+              return undefined !== result.headers["X-My-Custom-Header"];
+          },
+          function(result : IApiClientResult) {
+              // handle the response
+          });
+```
+
+If no condition matches, the callback defined by `success()` method is used.
+
+For specific status codes you can use the `ifStatus()` method:
+
+```javascript
+client.ifStatus(500,
+                function(result : IApiClientResult) {
+                    // handle the internal server error
+                });
+```
