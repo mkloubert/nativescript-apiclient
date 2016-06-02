@@ -1,0 +1,11 @@
+﻿
+button {
+    font-size: 42;
+    horizontal-align: center;
+}
+
+Label {
+    font-size: 20;
+    text-align: center;
+    padding: 8;
+}

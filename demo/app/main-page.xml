@@ -1,0 +1,36 @@
+<Page xmlns="http://schemas.nativescript.org/tns.xsd" navigatingTo="onNavigatingTo">
+  <Page.actionBar>
+    <ActionBar title="nativescript-apiclient Demo">
+    </ActionBar>
+  </Page.actionBar>
+  
+  <TabView>
+   <TabView.items>
+     <TabViewItem title="fixer.io">
+       <TabViewItem.view>
+          <GridLayout rows="auto,auto,auto,auto">
+            <GridLayout row="0" columns="*,64">
+              <TextView col="0" text="{{ sourceAmount }}" id="amount" />
+              
+              <Label col="1" text="EUR" />
+            </GridLayout>
+            
+            <Label row="1"
+                   text="in" />
+            
+            <GridLayout row="2" columns="*,64">
+              <TextView col="0" text="{{ targetAmount }}" />
+              
+              <ListPicker id="targetCurrencies" height="128"
+                          col="1" items="{{ currencies }}" />
+            </GridLayout>
+          
+            <Button row="3"
+                    height="64" text="Calculate"
+                    tap="{{ onCalculate }}" />
+          </GridLayout>
+       </TabViewItem.view>
+     </TabViewItem>
+   </TabView.items>
+ </TabView>
+</Page>
