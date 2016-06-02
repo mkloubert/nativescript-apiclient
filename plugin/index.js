@@ -82,6 +82,39 @@ var LoggerBase = (function () {
     return LoggerBase;
 }());
 exports.LoggerBase = LoggerBase;
+/**
+ * An authorizer that uses an internal list of
+ * authorizers to execute.
+ */
+var AggregateAuthorizer = (function () {
+    function AggregateAuthorizer() {
+        this._authorizers = [];
+    }
+    /**
+     * Adds one or more authorizers.
+     *
+     * @param {IAuthorizer} ...authorizers One or more authorizers to add.
+     */
+    AggregateAuthorizer.prototype.addAuthorizers = function () {
+        var authorizers = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            authorizers[_i - 0] = arguments[_i];
+        }
+        for (var i = 0; i < authorizers.length; i++) {
+            this._authorizers
+                .push(authorizers[i]);
+        }
+    };
+    /** @inheritdoc */
+    AggregateAuthorizer.prototype.prepare = function (reqOpts) {
+        for (var i = 0; i < this._authorizers.length; i++) {
+            this._authorizers[i]
+                .prepare(reqOpts);
+        }
+    };
+    return AggregateAuthorizer;
+}());
+exports.AggregateAuthorizer = AggregateAuthorizer;
 var ApiClient = (function (_super) {
     __extends(ApiClient, _super);
     function ApiClient(cfg) {
@@ -324,6 +357,7 @@ var ApiClient = (function (_super) {
             }
         };
         var httpRequestOpts = {};
+        httpRequestOpts.headers = {};
         var urlParams;
         if (!TypeUtils.isNullOrUndefined(opts)) {
             // request headers
@@ -403,6 +437,11 @@ var ApiClient = (function (_super) {
                         };
                         break;
                 }
+            }
+            // authorization
+            if (!TypeUtils.isNullOrUndefined(opts.authorizer)) {
+                opts.authorizer
+                    .prepare(httpRequestOpts);
             }
         }
         if (TypeUtils.isNullOrUndefined(content)) {
@@ -703,6 +742,82 @@ var ApiClientResult = (function (_super) {
     };
     return ApiClientResult;
 }(LoggerBase));
+/**
+ * An authorizer for basic authentication.
+ */
+var BasicAuth = (function () {
+    /**
+     * Initializes a new instance of that class.
+     *
+     * @param {String} username The username.
+     * @param {String} pwd The password.
+     */
+    function BasicAuth(username, pwd) {
+        this._username = username;
+        this._password = pwd;
+    }
+    Object.defineProperty(BasicAuth.prototype, "password", {
+        /**
+         * Gets the password.
+         *
+         * @property
+         */
+        get: function () {
+            return this._password;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /** @inheritdoc */
+    BasicAuth.prototype.prepare = function (reqOpts) {
+        reqOpts.headers["Authorization"] = "Basic " + btoa(this._username + ":" + this._password);
+    };
+    Object.defineProperty(BasicAuth.prototype, "username", {
+        /**
+         * Gets the username.
+         *
+         * @property
+         */
+        get: function () {
+            return this._username;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    return BasicAuth;
+}());
+exports.BasicAuth = BasicAuth;
+/**
+ * An authorizer for bearer authentication.
+ */
+var BearerAuth = (function () {
+    /**
+     * Initializes a new instance of that class.
+     *
+     * @param {String} token The token.
+     */
+    function BearerAuth(token) {
+        this._token = token;
+    }
+    /** @inheritdoc */
+    BearerAuth.prototype.prepare = function (reqOpts) {
+        reqOpts.headers["Authorization"] = "Bearer " + this._token;
+    };
+    Object.defineProperty(BearerAuth.prototype, "token", {
+        /**
+         * Gets the token.
+         *
+         * @property
+         */
+        get: function () {
+            return this._token;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    return BearerAuth;
+}());
+exports.BearerAuth = BearerAuth;
 /**
  * List of known HTTP request methods.
  */

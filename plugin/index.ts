@@ -126,6 +126,34 @@ export abstract class LoggerBase implements ILogger {
     }
 }
 
+/**
+ * An authorizer that uses an internal list of
+ * authorizers to execute.
+ */
+export class AggregateAuthorizer implements IAuthorizer {
+    private _authorizers : IAuthorizer[] = [];
+    
+    /**
+     * Adds one or more authorizers.
+     * 
+     * @param {IAuthorizer} ...authorizers One or more authorizers to add.
+     */
+    public addAuthorizers(...authorizers : IAuthorizer[]) {
+        for (var i = 0; i < authorizers.length; i++) {
+            this._authorizers
+                .push(authorizers[i]);
+        }
+    }
+    
+    /** @inheritdoc */
+    public prepare(reqOpts : HTTP.HttpRequestOptions) {
+        for (var i = 0; i < this._authorizers.length; i++) {
+            this._authorizers[i]
+                .prepare(reqOpts);
+        }
+    }
+}
+
 class ApiClient extends LoggerBase implements IApiClient {
     constructor(cfg : IApiClientConfig) {
         super();
@@ -454,6 +482,8 @@ class ApiClient extends LoggerBase implements IApiClient {
         };
         
         var httpRequestOpts : any = {};
+        httpRequestOpts.headers = {};
+        
         var urlParams;
         
         if (!TypeUtils.isNullOrUndefined(opts)) {
@@ -552,7 +582,14 @@ class ApiClient extends LoggerBase implements IApiClient {
                         break;
                 }
             }
+            
+            // authorization
+            if (!TypeUtils.isNullOrUndefined(opts.authorizer)) {
+                opts.authorizer
+                    .prepare(httpRequestOpts);
+            }
         }
+
         
         if (TypeUtils.isNullOrUndefined(content)) {
             content = null;
@@ -900,6 +937,77 @@ class ApiClientResult extends LoggerBase implements IApiClientResult {
     }
 }
 
+/**
+ * An authorizer for basic authentication.
+ */
+export class BasicAuth implements IAuthorizer {
+    private _password : string;
+    private _username : string;
+    
+    /**
+     * Initializes a new instance of that class.
+     * 
+     * @param {String} username The username.
+     * @param {String} pwd The password.
+     */
+    constructor(username : string, pwd : string) {
+        this._username = username;
+        this._password = pwd;
+    }
+    
+    /**
+     * Gets the password.
+     * 
+     * @property
+     */
+    public get password() : string {
+        return this._password;
+    }
+    
+    /** @inheritdoc */
+    public prepare(reqOpts : HTTP.HttpRequestOptions) {
+        reqOpts.headers["Authorization"] = "Basic " + btoa(this._username + ":" + this._password);
+    }
+    
+    /**
+     * Gets the username.
+     * 
+     * @property
+     */
+    public get username() : string {
+        return this._username;
+    }
+}
+
+/**
+ * An authorizer for bearer authentication.
+ */
+export class BearerAuth implements IAuthorizer {
+    private _token : string;
+    
+    /**
+     * Initializes a new instance of that class.
+     * 
+     * @param {String} token The token.
+     */
+    constructor(token : string) {
+        this._token = token;
+    }
+    
+    /** @inheritdoc */
+    public prepare(reqOpts : HTTP.HttpRequestOptions) {
+        reqOpts.headers["Authorization"] = "Bearer " + this._token;
+    }
+    
+    /**
+     * Gets the token.
+     * 
+     * @property
+     */
+    public get token() : string {
+        return this._token;
+    }
+}
 
 /**
  * List of known HTTP request methods.
@@ -1612,6 +1720,18 @@ export interface IApiClientResult extends ILogger {
 }
 
 /**
+ * Describes an object that prepares a HTTP for authorization.
+ */
+export interface IAuthorizer {
+    /**
+     * Prepares a HTTP request for authorization.
+     * 
+     * @param {HTTP.HttpRequestOptions} reqOpts The request options.
+     */
+    prepare(reqOpts: HTTP.HttpRequestOptions);
+}
+
+/**
  * Describes an entry that stores data for
  * invoke a response action if a predicate matches. 
  */
@@ -1824,6 +1944,11 @@ export interface ILogger {
  * Describes an object that stores (additional) options for a request.
  */
 export interface IRequestOptions {
+    /**
+     * Gets the authorizer.
+     */
+    authorizer? : IAuthorizer;
+    
     /**
      * Gets the content.
      */
