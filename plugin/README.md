@@ -69,7 +69,10 @@ client.beforeSend(function(opts: HTTP.HttpRequestOptions, tag: any) {
                        // handle all responses with status code 500 to 599
                    })
       .success(function(result: ApiClient.IApiClientResult) {
-                    // handle all responses with status codes less than 400
+                    // handle all responses with that were NOT
+                    // handled by 'clientError()' and 'serverError()'
+                    // 
+                    // especially with status code less than 400 and greater than 599
                     
                     var user = result.getJSON<IUser>();
                })
