@@ -423,6 +423,35 @@ export interface ILogger {
 }
 ```
 
+## URL parameters
+
+You can befine additional parameters for the URL.
+
+If you create an client like this
+
+```typescript
+var client = ApiClient.newClient({
+    baseUrl: "https://api.example.com/users"
+});
+```
+
+and start a request like this
+
+```typescript
+client.get({
+    params: {
+        id: 23979,
+        resource: "profile"
+    }
+});
+```
+
+The client will call the URL
+
+```
+[GET]  https://api.example.com/users?id=23979&resource=profile
+```
+
 ## Responses
 
 ### Callbacks
