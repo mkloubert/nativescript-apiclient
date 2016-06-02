@@ -110,7 +110,7 @@ Routes are suffixes for a base URL.
 
 You can define one or parameters inside that route, which are replaced when you start a request.
 
-If you create an client like this
+If you create a client like this
 
 ```typescript
 var client = ApiClient.newClient({
@@ -427,7 +427,7 @@ export interface ILogger {
 
 You can befine additional parameters for the URL.
 
-If you create an client like this
+If you create a client like this
 
 ```typescript
 var client = ApiClient.newClient({
