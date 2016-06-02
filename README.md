@@ -59,15 +59,19 @@ client.clientError(function(result : ApiClient.IApiClientResult) {
                        // handle all responses with status code 500 to 599
                    })
       .success(function(result : ApiClient.IApiClientResult) {
-                    // handle all responses with status codes less than 400    
+                    // handle all responses with status codes less than 400
+                    
+                    var user = result.getJSON<IUser>();
                })
       .error(function(err : ApiClient.IApiClientError) {
                  // handle API client errors
              })
       .completed(function(err : ApiClient.IApiClientCompleteContext) {
+                     // invoked after "result" and "error" actions
                  });
 
 for (var userId = 1; userId <= 100; userId++) {
+    // start a GET request
     client.get({
         routeParams: {
             id: userId
