@@ -5,6 +5,8 @@
 
 A [NativeScript](https://nativescript.org/) module module for simply calling HTTP based APIs.
 
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=G88PA3Q7FFSGN)
+
 ## License
 
 [MIT license](https://raw.githubusercontent.com/mkloubert/nativescript-apiclient/master/LICENSE)
@@ -41,6 +43,9 @@ import ApiClient = require("nativescript-apiclient");
 ### Example
 
 ```typescript
+import ApiClient = require("nativescript-apiclient");
+import HTTP = require("http");
+
 interface IUser {
     displayName: string;
     id?: number;
@@ -52,21 +57,24 @@ var client = ApiClient.newClient({
     route: "{id}",  
 });
 
-client.clientError(function(result : ApiClient.IApiClientResult) {
+client.beforeSend(function(opts: HTTP.HttpRequestOptions) {
+                      // prepare the request here
+                  })
+      .clientError(function(result: ApiClient.IApiClientResult) {
                        // handle all responses with status code 400 to 499
                    })
-      .serverError(function(result : ApiClient.IApiClientResult) {
+      .serverError(function(result: ApiClient.IApiClientResult) {
                        // handle all responses with status code 500 to 599
                    })
-      .success(function(result : ApiClient.IApiClientResult) {
+      .success(function(result: ApiClient.IApiClientResult) {
                     // handle all responses with status codes less than 400
                     
                     var user = result.getJSON<IUser>();
                })
-      .error(function(err : ApiClient.IApiClientError) {
+      .error(function(err: ApiClient.IApiClientError) {
                  // handle API client errors
              })
-      .completed(function(ctx : ApiClient.IApiClientCompleteContext) {
+      .completed(function(ctx: ApiClient.IApiClientCompleteContext) {
                      // invoked after "result" and "error" actions
                  });
 
@@ -104,7 +112,7 @@ Routes are suffixes for a base URL.
 
 You can define one or parameters inside that route, which are replaced when you start a request.
 
-If you create an client like this
+If you create a client like this
 
 ```typescript
 var client = ApiClient.newClient({
@@ -147,7 +155,7 @@ interface IAuthorizer {
 
 The plugin provides the following implementations:
 
-### BasicAuth
+### AggregateAuthorizer
 
 ```typescript
 var authorizer = new ApiClient.AggregateAuthorizer();
@@ -415,4 +423,219 @@ export interface ILogger {
     warn(msg : any, tag?: string,
          priority?: LogPriority) : ILogger;
 }
+```
+
+## URL parameters
+
+You can befine additional parameters for the URL.
+
+If you create a client like this
+
+```typescript
+var client = ApiClient.newClient({
+    baseUrl: "https://api.example.com/users"
+});
+```
+
+and start a request like this
+
+```typescript
+client.get({
+    params: {
+        id: 23979,
+        resource: "profile"
+    }
+});
+```
+
+The client will call the URL
+
+```
+[GET]  https://api.example.com/users?id=23979&resource=profile
+```
+
+## Responses
+
+### Callbacks
+
+#### Simple
+
+```typescript
+client.success(function(result : ApiClient.IApiClientResult) {
+                    // handle any response
+               });
+```
+
+The `result` object has the following structure:
+
+```typescript
+export interface IApiClientResult extends ILogger {
+    /**
+     * Gets the underlying API client.
+     */
+    client: IApiClient;
+
+    /**
+     * Gets the HTTP response code.
+     */
+    code: number;
+    
+    /**
+     * Gets the raw content.
+     */
+    content: any;
+    
+    /**
+     * Gets the underlying (execution) context.
+     */
+    context: ApiClientResultContext;
+    
+    /**
+     * Gets the response headers.
+     */
+    headers: HTTP.Headers;
+    
+    /**
+     * Returns the content as wrapped AJAX result object.
+     * 
+     * @return {IAjaxResult<TData>} The ajax result object.
+     */
+    getAjaxResult<TData>() : IAjaxResult<TData>;
+    
+    /**
+     * Returns the content as file.
+     * 
+     * @param {String} [destFile] The custom path of the destination file.
+     * 
+     * @return {FileSystem.File} The file.
+     */
+    getFile(destFile?: string) : FileSystem.File;
+    
+    /**
+     * Tries result the content as image source.
+     */
+    getImage(): Promise<Image.ImageSource>;
+    
+    /**
+     * Returns the content as JSON object.
+     */
+    getJSON<T>() : T;
+    
+    /**
+     * Returns the content as string.
+     */
+    getString() : string;
+    
+    /**
+     * Gets the information about the request.
+     */
+    request: IHttpRequest;
+    
+    /**
+     * Gets the raw response.
+     */
+    response: HTTP.HttpResponse;
+}
+```
+
+### Errors
+
+```typescript
+client.error(function(err : ApiClient.IApiClientError) {
+                 // handle an HTTP client error here
+             });
+```
+
+The `err` object has the following structure:
+
+```typescript
+export interface IApiClientError extends ILogger {
+    /**
+     * Gets the underlying client.
+     */
+    client: IApiClient;
+    
+    /**
+     * Gets the context.
+     */
+    context: ApiClientErrorContext;
+    
+    /**
+     * Gets the error data.
+     */
+    error: any;
+    
+    /**
+     * Gets or sets if error has been handled or not.
+     */
+    handled: boolean;
+    
+    /**
+     * Gets the information about the request.
+     */
+    request: IHttpRequest;
+}
+```
+
+#### Short hand callbacks
+
+```typescript
+client.clientError(function(result : ApiClient.IApiClientResult) {
+                       // handle status codes between 400 and 499
+                   });
+                   
+client.ok(function(result : ApiClient.IApiClientResult) {
+                       // handle status codes with 200, 204 or 205
+                   });
+                   
+client.serverError(function(result : ApiClient.IApiClientResult) {
+                       // handle status codes between 500 and 599
+                   });
+```
+
+The following methods are also supported:
+
+| Name | Description |
+| ---- | --------- |
+| badGateway | Handles a request with status code `502`.  |
+| badRequest | Handles a request with status code `400`. |
+| forbidden | Handles a request with status code `403`. |
+| gone | Handles a request with status code `410`. |
+| internalServerError | Handles a request with status code `500`. |
+| locked | Handles a request with status code `423`. |
+| methodNotAllowed | Handles a request with status code `405`. |
+| notFound | Handles a request with status code `404`. |
+| notImplemented | Handles a request with status code `501`. |
+| serviceUnavailable | Handles a request with status code `503`. |
+| succeededRequest | Handles a request with a status code between `200` and `299`. |
+| tooManyRequests | Handles a request with status code `429`. |
+| unauthorized | Handles a request with status code `401`. |
+| unsupportedMediaType | Handles a request with status code `415`. |
+| uriTooLong | Handles a request with status code `414`. |
+
+##### Conditional callbacks
+
+You can define callbacks for any kind of conditions.
+
+A generic way to do this is to use the `if()` method:
+
+```javascript
+client.if(function(result : IApiClientResult) : boolean {
+              // invoke if 'X-My-Custom-Header' is defined
+              return undefined !== result.headers["X-My-Custom-Header"];
+          },
+          function(result : IApiClientResult) {
+              // handle the response
+          });
+```
+
+If no condition matches, the callback defined by `success()` method is used.
+
+For specific status codes you can use the `ifStatus()` method:
+
+```javascript
+client.ifStatus(500,
+                function(result : IApiClientResult) {
+                    // handle the internal server error
+                });
 ```
