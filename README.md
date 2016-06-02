@@ -26,4 +26,4 @@ inside your app project to install the module.
 
 ## Demo
 
-For quick start have a look at the [demo/app/main-view-model.js](https://github.com/mkloubert/nativescript-apiclient/blob/master/demo/app/main-view-model.js) file of the [demo app](https://github.com/mkloubert/nativescript-apiclient/tree/master/demo) to learn how it works.
+For quick start have a look at the [plugin/index.ts](https://github.com/mkloubert/nativescript-apiclient/blob/master/plugin/index.ts) or use the "IntelliSense" of your IDE to learn how it works.
