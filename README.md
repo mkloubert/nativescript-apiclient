@@ -147,7 +147,7 @@ interface IAuthorizer {
 
 The plugin provides the following implementations:
 
-### BasicAuth
+### AggregateAuthorizer
 
 ```typescript
 var authorizer = new ApiClient.AggregateAuthorizer();
@@ -416,3 +416,128 @@ export interface ILogger {
          priority?: LogPriority) : ILogger;
 }
 ```
+
+## Responses
+
+### Callbacks
+
+#### Simple
+
+```typescript
+client.success(function(result : ApiClient.IApiClientResult) {
+                    // handle any response
+               });
+```
+
+The `result` object has the following structure:
+
+```typescript
+export interface IApiClientResult extends ILogger {
+    /**
+     * Gets the underlying API client.
+     */
+    client: IApiClient;
+
+    /**
+     * Gets the HTTP response code.
+     */
+    code: number;
+    
+    /**
+     * Gets the raw content.
+     */
+    content: any;
+    
+    /**
+     * Gets the underlying (execution) context.
+     */
+    context: ApiClientResultContext;
+    
+    /**
+     * Gets the response headers.
+     */
+    headers: HTTP.Headers;
+    
+    /**
+     * Returns the content as wrapped AJAX result object.
+     * 
+     * @return {IAjaxResult<TData>} The ajax result object.
+     */
+    getAjaxResult<TData>() : IAjaxResult<TData>;
+    
+    /**
+     * Returns the content as file.
+     * 
+     * @param {String} [destFile] The custom path of the destination file.
+     * 
+     * @return {FileSystem.File} The file.
+     */
+    getFile(destFile?: string) : FileSystem.File;
+    
+    /**
+     * Tries result the content as image source.
+     */
+    getImage(): Promise<Image.ImageSource>;
+    
+    /**
+     * Returns the content as JSON object.
+     */
+    getJSON<T>() : T;
+    
+    /**
+     * Returns the content as string.
+     */
+    getString() : string;
+    
+    /**
+     * Gets the information about the request.
+     */
+    request: IHttpRequest;
+    
+    /**
+     * Gets the raw response.
+     */
+    response: HTTP.HttpResponse;
+}
+```
+
+### Errors
+
+```typescript
+client.error(function(err : ApiClient.IApiClientError) {
+                 // handle an HTTP client error here
+             });
+```
+
+The `err` object has the following structure:
+
+```typescript
+export interface IApiClientError extends ILogger {
+    /**
+     * Gets the underlying client.
+     */
+    client: IApiClient;
+    
+    /**
+     * Gets the context.
+     */
+    context: ApiClientErrorContext;
+    
+    /**
+     * Gets the error data.
+     */
+    error: any;
+    
+    /**
+     * Gets or sets if error has been handled or not.
+     */
+    handled: boolean;
+    
+    /**
+     * Gets the information about the request.
+     */
+    request: IHttpRequest;
+}
+```
+
+##### Conditional callbacks
