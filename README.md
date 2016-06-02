@@ -48,7 +48,7 @@ interface IUser {
 }
 
 var client = ApiClient.newClient({
-    baseUrl: "https://example.com/users",
+    baseUrl: "https://api.example.com/users",
     route: "{id}",  
 });
 
@@ -74,10 +74,42 @@ for (var userId = 1; userId <= 100; userId++) {
     // start a GET request
     client.get({
         routeParams: {
-            id: userId
+            id: userId  // {id}
         }
     });
 }
+```
+
+## Routes
+
+Routes are suffixes for a base URL.
+
+You can define one or parameters inside that route, which are replaced when you starting a call.
+
+If you create an client like this
+
+```typescript
+var client = ApiClient.newClient({
+    baseUrl: "https://api.example.com/users",
+    route: "{id}/{resource}",  
+});
+```
+
+and start a request like this
+
+```typescript
+client.get({
+    routeParams: {
+        id: 5979  // {id},
+        resource: "profile"
+    }
+});
+```
+
+The client will call the URL
+
+```
+[GET]  https://api.example.com/users/5979/profile
 ```
 
 ## Logging
