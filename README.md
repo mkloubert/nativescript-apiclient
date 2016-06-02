@@ -27,3 +27,51 @@ inside your app project to install the module.
 ## Demo
 
 For quick start have a look at the [plugin/index.ts](https://github.com/mkloubert/nativescript-apiclient/blob/master/plugin/index.ts) or use the "IntelliSense" of your IDE to learn how it works.
+
+Otherwise...
+
+## Usage
+
+### Import
+
+```typescript
+import ApiClient = require("nativescript-apiclient");
+```
+
+### Example
+
+```typescript
+interface IUser {
+    displayName: string;
+    id?: number;
+    name: string;
+}
+
+var client = ApiClient.newClient({
+    baseUrl: "https://example.com/users",
+    route: "{id}",  
+});
+
+client.clientError(function(result : ApiClient.IApiClientResult) {
+                       // handle all responses with status code 400 to 499
+                   })
+      .serverError(function(result : ApiClient.IApiClientResult) {
+                       // handle all responses with status code 500 to 599
+                   })
+      .success(function(result : ApiClient.IApiClientResult) {
+                    // handle all responses with status codes less than 400    
+               })
+      .error(function(err : ApiClient.IApiClientError) {
+                 // handle API client errors
+             })
+      .completed(function(err : ApiClient.IApiClientCompleteContext) {
+                 });
+
+for (var userId = 1; userId <= 100; userId++) {
+    client.get({
+        routeParams: {
+            id: userId
+        }
+    });
+}
+```
