@@ -256,7 +256,7 @@ client.patch({
 ### DELETE
 
 ```typescript
-client.post({
+client.delete({
     content: {
         id: 221286
     },
