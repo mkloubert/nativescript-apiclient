@@ -569,7 +569,7 @@ export interface IApiClientResult extends ILogger {
 }
 ```
 
-### Errors
+#### Errors
 
 ```typescript
 client.error(function(err : ApiClient.IApiClientError) {
@@ -645,7 +645,7 @@ The following methods are also supported:
 | unsupportedMediaType | Handles a request with status code `415`. |
 | uriTooLong | Handles a request with status code `414`. |
 
-##### Conditional callbacks
+#### Conditional callbacks
 
 You can define callbacks for any kind of conditions.
 
