@@ -748,10 +748,19 @@ If no condition matches, the callback defined by `success()` method is used.
 For specific status codes you can use the `ifStatus()` method:
 
 ```javascript
-client.ifStatus(500,
+client.ifStatus((statusCode) => statusCode === 500,
                 function(result : IApiClientResult) {
                     // handle the internal server error
                 });
+```
+
+Or shorter:
+
+```javascript
+client.status(500,
+              function(result : IApiClientResult) {
+                  // handle the internal server error
+              });
 ```
 
 ##### Short hand callbacks
