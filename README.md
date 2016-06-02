@@ -180,7 +180,7 @@ var authorizer = new ApiClient.BearerAuth("MySecretToken");
 ### GET
 
 ```typescript
-// ?TM=5979&MMK=23979
+// ?TM=5979&MK=23979
 client.get({
     params: {
         TM: 5979,
