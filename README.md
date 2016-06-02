@@ -606,6 +606,7 @@ The following methods are also supported:
 | methodNotAllowed | Handles a request with status code `405`. |
 | notFound | Handles a request with status code `404`. |
 | notImplemented | Handles a request with status code `501`. |
+| redirection | Handles a request with a status code between `300` and `399`. |
 | serviceUnavailable | Handles a request with status code `503`. |
 | succeededRequest | Handles a request with a status code between `200` and `299`. |
 | tooManyRequests | Handles a request with status code `429`. |
