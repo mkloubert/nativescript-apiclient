@@ -38,6 +38,8 @@ function createViewModel(page) {
                 }
                 viewModel.set("targetAmount", ta * a);
                 ctx.dbg("OK: target amount: " + viewModel.get("targetAmount"));
+            }).complete(function (ctx) {
+                ctx.dbg("Completed call of: " + ctx.request.url);
             });
             client.get({
                 params: {

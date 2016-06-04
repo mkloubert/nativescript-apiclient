@@ -792,6 +792,7 @@ The following methods are also supported:
 | forbidden | Handles a request with status code `403`. |
 | gatewayTimeout | Handles a request with status code `504`. |
 | gone | Handles a request with status code `410`. |
+| insufficientStorage | Handles a request with status code `507`. |
 | internalServerError | Handles a request with status code `500`. |
 | locked | Handles a request with status code `423`. |
 | methodNotAllowed | Handles a request with status code `405`. |

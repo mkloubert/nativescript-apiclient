@@ -279,6 +279,9 @@ var ApiClient = (function (_super) {
         }
         return this.if(ifPredicate, statusAction);
     };
+    ApiClient.prototype.insufficientStorage = function (insufficientAction) {
+        return this.status(507, insufficientAction);
+    };
     ApiClient.prototype.internalServerError = function (errAction) {
         return this.status(500, errAction);
     };

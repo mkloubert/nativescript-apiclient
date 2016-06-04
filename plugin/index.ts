@@ -374,6 +374,10 @@ class ApiClient extends LoggerBase implements IApiClient {
         return this.if(ifPredicate, statusAction);
     }
 
+    public insufficientStorage(insufficientAction : (result : IApiClientResult) => void) : ApiClient {
+        return this.status(507, insufficientAction);
+    }
+
     public internalServerError(errAction : (result : IApiClientResult) => void) : ApiClient {
         return this.status(500, errAction);
     }
@@ -1472,6 +1476,16 @@ export interface IApiClient {
      */
     ifStatus(predicate: (code : number) => boolean,
              statusAction : (result : IApiClientResult) => void) : IApiClient;
+    
+    /**
+     * Short hand method to define an action that is invoked
+     * for a status code 507 (insufficient storage).
+     * 
+     * @chainable
+     * 
+     * @param {Function} insufficientAction The action to invoke.
+     */
+    insufficientStorage(insufficientAction : (result : IApiClientResult) => void) : IApiClient;
     
     /**
      * Short hand method to define an action that is invoked

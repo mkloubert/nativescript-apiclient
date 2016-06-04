@@ -97,6 +97,8 @@ export function createViewModel(page : Page) {
                 viewModel.set("targetAmount", ta * a);
                 
                 ctx.dbg("OK: target amount: " + viewModel.get("targetAmount"));
+            }).complete((ctx) => {
+                ctx.dbg("Completed call of: " + ctx.request.url);
             });
             
             client.get({
