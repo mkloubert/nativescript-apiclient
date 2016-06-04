@@ -544,7 +544,7 @@ var ApiClient = (function (_super) {
                     !TypeUtils.isNullOrUndefined(me.successAction)) {
                     me.successAction(result);
                 }
-                invokeComplete(undefined, errCtx);
+                invokeComplete(result, undefined);
             }, function (err) {
                 me.err("[ERROR]: " + err, getLogTag());
                 var errCtx = new ApiClientError(me, httpReq, err, ApiClientErrorContext.ClientError, opts.tag);

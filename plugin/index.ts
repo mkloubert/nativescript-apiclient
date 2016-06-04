@@ -721,7 +721,7 @@ class ApiClient extends LoggerBase implements IApiClient {
                               me.successAction(result);
                           }
                         
-                          invokeComplete(undefined, errCtx);
+                          invokeComplete(result, undefined);
                       },
                       function (err) {
                           me.err("[ERROR]: " + err, getLogTag());
