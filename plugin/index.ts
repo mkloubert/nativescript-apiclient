@@ -446,7 +446,7 @@ class ApiClient extends LoggerBase implements IApiClient {
             }
             
             // collect route parameters
-            var routeParams : {};
+            var routeParams = {};
             if (!TypeUtils.isNullOrUndefined(opts)) {
                 var allRouteParams = [getOwnProperties(me.routeParams), getOwnProperties(opts.routeParams)];
                 for (var i = 0; i < allRouteParams.length; i++) {
