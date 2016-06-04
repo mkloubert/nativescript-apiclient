@@ -332,6 +332,10 @@ class ApiClient extends LoggerBase implements IApiClient {
         return this.status(403, forbiddenAction);
     }
     
+    public gatewayTimeout(timeoutAction : (result : IApiClientResult) => void) : ApiClient {
+        return this.status(504, timeoutAction);
+    }
+    
     public get(opts? : IRequestOptions) {
         return this.request("GET", opts);
     }
@@ -1414,6 +1418,16 @@ export interface IApiClient {
     forbidden(forbiddenAction : (result : IApiClientResult) => void) : IApiClient;
     
     /**
+     * Short hand method to define an action that is invoked
+     * for a status code 504 (gateway timeout).
+     * 
+     * @chainable
+     * 
+     * @param {Function} timeoutAction The action to invoke.
+     */
+    gatewayTimeout(timeoutAction: (result : IApiClientResult) => void) : IApiClient;
+    
+    /**
      * Starts a GET request.
      * 
      * @param {IRequestOptions} [opts] The (additional) options.
@@ -1525,7 +1539,7 @@ export interface IApiClient {
      * 
      * @chainable
      * 
-     * @param {Function} okAction The action to invoke.
+     * @param {Function} tooLargeAction The action to invoke.
      */
     payloadTooLarge(tooLargeAction: (result : IApiClientResult) => void) : IApiClient;
     

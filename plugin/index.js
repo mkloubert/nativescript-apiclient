@@ -251,6 +251,9 @@ var ApiClient = (function (_super) {
     ApiClient.prototype.forbidden = function (forbiddenAction) {
         return this.status(403, forbiddenAction);
     };
+    ApiClient.prototype.gatewayTimeout = function (timeoutAction) {
+        return this.status(504, timeoutAction);
+    };
     ApiClient.prototype.get = function (opts) {
         return this.request("GET", opts);
     };
