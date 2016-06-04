@@ -404,6 +404,10 @@ class ApiClient extends LoggerBase implements IApiClient {
         invokeLogActions(this, msg);
     }
     
+    public payloadTooLarge(tooLargeAction: (result : IApiClientResult) => void) : ApiClient {
+        return this.status(413, tooLargeAction);
+    }
+    
     public params: any;
     
     public patch(opts? : IRequestOptions) {
@@ -1513,7 +1517,17 @@ export interface IApiClient {
      * 
      * @param {Function} okAction The action to invoke.
      */
-    ok(okAction : (result : IApiClientResult) => void) : IApiClient;
+    ok(okAction: (result : IApiClientResult) => void) : IApiClient;
+    
+    /**
+     * Short hand method to define an action that is invoked
+     * for a status code 413 (payload too large).
+     * 
+     * @chainable
+     * 
+     * @param {Function} okAction The action to invoke.
+     */
+    payloadTooLarge(tooLargeAction: (result : IApiClientResult) => void) : IApiClient;
     
     /**
      * Gets or sets the global list of URL parameters.

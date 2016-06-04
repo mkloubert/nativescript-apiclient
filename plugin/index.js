@@ -300,6 +300,9 @@ var ApiClient = (function (_super) {
     ApiClient.prototype.onLog = function (msg) {
         invokeLogActions(this, msg);
     };
+    ApiClient.prototype.payloadTooLarge = function (tooLargeAction) {
+        return this.status(413, tooLargeAction);
+    };
     ApiClient.prototype.patch = function (opts) {
         return this.request("PATCH", opts);
     };
