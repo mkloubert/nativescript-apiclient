@@ -798,6 +798,7 @@ The following methods are also supported:
 | methodNotAllowed | Handles a request with status code `405`. |
 | notFound | Handles a request with status code `404`. |
 | notImplemented | Handles a request with status code `501`. |
+| partialContent | Handles a request with status code `206`. |
 | payloadTooLarge | Handles a request with status code `413`. |
 | redirection | Handles a request with a status code between `300` and `399`. |
 | serviceUnavailable | Handles a request with status code `503`. |

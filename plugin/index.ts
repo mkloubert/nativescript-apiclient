@@ -156,10 +156,11 @@ class ApiClient extends LoggerBase implements IApiClient {
         super();
         
         this.baseUrl = cfg.baseUrl;
-        this.route = cfg.route;
         this.headers = cfg.headers;
-        this.params = cfg.params;
+        this.route = cfg.route;
         this.routeParams = cfg.routeParams;
+        this.params = cfg.params;
+        this.authorizer = cfg.authorizer;
         
         // beforeSend()
         if (!TypeUtils.isNullOrUndefined(cfg.beforeSend)) {
@@ -269,6 +270,8 @@ class ApiClient extends LoggerBase implements IApiClient {
         
         return this;
     }
+    
+    public authorizer: IAuthorizer;
     
     public badGateway(badGatewayAction : (result : IApiClientResult) => void) : ApiClient {
         return this.status(502, badGatewayAction);
@@ -417,6 +420,10 @@ class ApiClient extends LoggerBase implements IApiClient {
     }
     
     public params: any;
+    
+    public partialContent(partialAction: (result : IApiClientResult) => void) : IApiClient {
+        return this.status(206, partialAction);
+    }
     
     public patch(opts? : IRequestOptions) {
         return this.request("PATCH", opts);
@@ -638,12 +645,11 @@ class ApiClient extends LoggerBase implements IApiClient {
             }
             
             // authorization
-            if (!TypeUtils.isNullOrUndefined(opts.authorizer)) {
-                opts.authorizer
-                    .prepare(httpRequestOpts);
+            var authorizer = opts.authorizer || me.authorizer;
+            if (!TypeUtils.isNullOrUndefined(authorizer)) {
+                authorizer.prepare(httpRequestOpts);
             }
         }
-
         
         if (TypeUtils.isNullOrUndefined(content)) {
             content = null;
@@ -777,6 +783,10 @@ class ApiClient extends LoggerBase implements IApiClient {
     public route: string;
     
     public routeParams: any;
+    
+    public setAuthorizer(authorizer: IAuthorizer) : ApiClient {
+        return this;
+    }
     
     public serverError(serverErrAction : (result : IApiClientResult) => void): ApiClient {
         return this.ifStatus((code) => code >= 500 && code <= 599,
@@ -1305,7 +1315,7 @@ export interface IAjaxResult<TData> {
     msg?: string;
     
     /**
-     * The the result data (if defined).
+     * The result data (if defined).
      * 
      * @property
      */
@@ -1333,6 +1343,11 @@ export interface IApiClient {
      * @param {Function} logAction The log action.
      */
     addLogger(logAction : (ctx : ILogMessage) => void) : IApiClient;
+    
+    /**
+     * Gets or sets the deault authorizer.
+     */
+    authorizer: IAuthorizer;
     
     /**
      * Short hand method to define an action that is invoked
@@ -1565,6 +1580,16 @@ export interface IApiClient {
     params: any;
     
     /**
+     * Short hand method to define an action that is invoked
+     * for a status code 206 (partial content).
+     * 
+     * @chainable
+     * 
+     * @param {Function} partialAction The action to invoke.
+     */
+    partialContent(partialAction: (result : IApiClientResult) => void) : IApiClient;
+    
+    /**
      * Starts a PATCH request.
      * 
      * @param {IRequestOptions} [opts] The (additional) options.
@@ -1632,6 +1657,15 @@ export interface IApiClient {
      * @param {Function} unavailableAction The action to invoke.
      */
     serviceUnavailable(unavailableAction : (result : IApiClientResult) => void) : IApiClient;
+    
+    /**
+     * Sets the default authorizer.
+     * 
+     * @chainable
+     * 
+     * @param {IAuthorizer} authorizer The default authorizer.
+     */
+    setAuthorizer(authorizer: IAuthorizer) : IApiClient;
     
     /**
      * Sets the base URL.
@@ -1758,6 +1792,13 @@ export interface IApiClientCompleteContext extends ILogger, ITagProvider {
  * Describes an object that stores configuration data for an API client.
  */
 export interface IApiClientConfig {
+    /**
+     * Gets the default authorizer.
+     * 
+     * @property
+     */
+    authorizer?: IAuthorizer;
+    
     /**
      * Gets the base URL to use.
      * 

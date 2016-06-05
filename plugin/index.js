@@ -124,10 +124,11 @@ var ApiClient = (function (_super) {
         this.ifEntries = [];
         this.logActions = [];
         this.baseUrl = cfg.baseUrl;
-        this.route = cfg.route;
         this.headers = cfg.headers;
-        this.params = cfg.params;
+        this.route = cfg.route;
         this.routeParams = cfg.routeParams;
+        this.params = cfg.params;
+        this.authorizer = cfg.authorizer;
         // beforeSend()
         if (!TypeUtils.isNullOrUndefined(cfg.beforeSend)) {
             this.beforeSend(cfg.beforeSend);
@@ -309,6 +310,9 @@ var ApiClient = (function (_super) {
     ApiClient.prototype.payloadTooLarge = function (tooLargeAction) {
         return this.status(413, tooLargeAction);
     };
+    ApiClient.prototype.partialContent = function (partialAction) {
+        return this.status(206, partialAction);
+    };
     ApiClient.prototype.patch = function (opts) {
         return this.request("PATCH", opts);
     };
@@ -482,9 +486,9 @@ var ApiClient = (function (_super) {
                 }
             }
             // authorization
-            if (!TypeUtils.isNullOrUndefined(opts.authorizer)) {
-                opts.authorizer
-                    .prepare(httpRequestOpts);
+            var authorizer = opts.authorizer || me.authorizer;
+            if (!TypeUtils.isNullOrUndefined(authorizer)) {
+                authorizer.prepare(httpRequestOpts);
             }
         }
         if (TypeUtils.isNullOrUndefined(content)) {
@@ -579,6 +583,9 @@ var ApiClient = (function (_super) {
             }
             invokeComplete(undefined, errCtx);
         }
+    };
+    ApiClient.prototype.setAuthorizer = function (authorizer) {
+        return this;
     };
     ApiClient.prototype.serverError = function (serverErrAction) {
         return this.ifStatus(function (code) { return code >= 500 && code <= 599; }, serverErrAction);
