@@ -280,6 +280,9 @@ var ApiClient = (function (_super) {
         }
         return this.if(ifPredicate, statusAction);
     };
+    ApiClient.prototype.informational = function (infoAction) {
+        return this.ifStatus(function (code) { return code >= 100 && code <= 199; }, infoAction);
+    };
     ApiClient.prototype.insufficientStorage = function (insufficientAction) {
         return this.status(507, insufficientAction);
     };
@@ -307,14 +310,14 @@ var ApiClient = (function (_super) {
     ApiClient.prototype.onLog = function (msg) {
         invokeLogActions(this, msg);
     };
-    ApiClient.prototype.payloadTooLarge = function (tooLargeAction) {
-        return this.status(413, tooLargeAction);
-    };
     ApiClient.prototype.partialContent = function (partialAction) {
         return this.status(206, partialAction);
     };
     ApiClient.prototype.patch = function (opts) {
         return this.request("PATCH", opts);
+    };
+    ApiClient.prototype.payloadTooLarge = function (tooLargeAction) {
+        return this.status(413, tooLargeAction);
     };
     ApiClient.prototype.post = function (opts) {
         return this.request("POST", opts);

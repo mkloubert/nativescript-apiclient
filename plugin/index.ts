@@ -376,6 +376,11 @@ class ApiClient extends LoggerBase implements IApiClient {
 
         return this.if(ifPredicate, statusAction);
     }
+    
+    public informational(infoAction: (result : IApiClientResult) => void) : ApiClient {
+        return this.ifStatus((code) => code >= 100 && code <= 199,
+                             infoAction);
+    }
 
     public insufficientStorage(insufficientAction : (result : IApiClientResult) => void) : ApiClient {
         return this.status(507, insufficientAction);
@@ -414,11 +419,7 @@ class ApiClient extends LoggerBase implements IApiClient {
     protected onLog(msg : ILogMessage) {
         invokeLogActions(this, msg);
     }
-    
-    public payloadTooLarge(tooLargeAction: (result : IApiClientResult) => void) : ApiClient {
-        return this.status(413, tooLargeAction);
-    }
-    
+
     public params: any;
     
     public partialContent(partialAction: (result : IApiClientResult) => void) : IApiClient {
@@ -427,6 +428,10 @@ class ApiClient extends LoggerBase implements IApiClient {
     
     public patch(opts? : IRequestOptions) {
         return this.request("PATCH", opts);
+    }
+    
+    public payloadTooLarge(tooLargeAction: (result : IApiClientResult) => void) : ApiClient {
+        return this.status(413, tooLargeAction);
     }
     
     public post(opts? : IRequestOptions) {
@@ -1491,6 +1496,15 @@ export interface IApiClient {
      */
     ifStatus(predicate: (code : number) => boolean,
              statusAction : (result : IApiClientResult) => void) : IApiClient;
+    
+    /**
+     * Defines an action that is invoked on a status code between 100 and 199.
+     * 
+     * @chainable
+     * 
+     * @param {Function} infoAction The action to invoke.
+     */
+    informational(infoAction: (result : IApiClientResult) => void) : IApiClient;
     
     /**
      * Short hand method to define an action that is invoked
