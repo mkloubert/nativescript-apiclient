@@ -244,7 +244,7 @@ the client will call the URL
 The `ctx` object in the format provider call of `addFormatProvider()` has the following structure:
 
 ```typescript
-export interface IFormatProviderContext {
+interface IFormatProviderContext {
     /**
      * Gets the format expression.
      */
@@ -445,7 +445,7 @@ client.clientError(function(result : ApiClient.IApiClientResult) {
 The `IApiClientResult`, `IApiClientError` and `IApiClientCompleteContext` objects using the `ILogger` interface:
 
 ```typescript
-export interface ILogger {
+interface ILogger {
     /**
      * Logs an alert message.
      * 
@@ -581,7 +581,7 @@ The client will call the URL
 Like route parameters you can also use functions for defining URL parameters:
 
 ```typescript
-var getUserId = function() : number {
+var getUserId = function() : string {
     // load the user ID from somewhere
 };
 
@@ -607,6 +607,8 @@ function (paramName: string, index: number, funcDepth: string) : any {
 | index | The zero based index of the handled URL parameter. |
 | funcDepth | This value is `0` at the beginning. If you return a function in that function again, this will increase until you stop to return a function. |
 
+IMPORTANT: It is also recommended to use / return strings a parameter values to prevent problem by converting the values to an URL string.
+
 ## Responses
 
 ### Callbacks
@@ -622,7 +624,7 @@ client.success(function(result : ApiClient.IApiClientResult) {
 The `result` object has the following structure:
 
 ```typescript
-export interface IApiClientResult extends ILogger {
+interface IApiClientResult extends ILogger {
     /**
      * Gets the underlying API client.
      */
@@ -702,7 +704,7 @@ client.error(function(err : ApiClient.IApiClientError) {
 The `err` object has the following structure:
 
 ```typescript
-export interface IApiClientError extends ILogger {
+interface IApiClientError extends ILogger {
     /**
      * Gets the underlying client.
      */
