@@ -1386,7 +1386,7 @@ export interface IApiClient {
      * 
      * @param {Function} beforeAction The action to invoke.
      */
-    beforeSend(beforeAction : (opts : HTTP.HttpRequestOptions) => void) : IApiClient;
+    beforeSend(beforeAction : (opts : HTTP.HttpRequestOptions, tag: any) => void) : IApiClient;
     
     /**
      * Defines an action that is invoked on a status code between 400 and 499.
