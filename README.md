@@ -105,7 +105,7 @@ for (var userId = 1; userId <= 100; userId++) {
     
         // route parameters
         routeParams: {
-            id: userId  // {id}
+            id: userId.toString()  // {id}
         },
         
         // global value for all callbacks 
@@ -134,7 +134,7 @@ and start a request like this
 ```typescript
 client.get({
     routeParams: {
-        id: 5979,  // {id}
+        id: "5979",  // {id}
         resource: "profile"  // {resource}
     }
 });
@@ -149,7 +149,7 @@ the client will call the URL
 Parameter values can also be functions, what means that the value that is returned by that functions is used as value:
 
 ```typescript
-var getUserId = function() : number {
+var getUserId = function() : string {
     // load the user ID from somewhere
 };
 
@@ -172,7 +172,7 @@ function (paramName: string, routeParams: any, match: string, formatExpr: string
 | Name | Description |
 | ---- | --------- |
 | paramName | The name of the parameter. For `{id}` this will be `id` |
-| routeParams | The list of submitted route parameters with their values. |
+| routeParams | The list of submitted route parameters with their values. IMPORTANT: Keep sure to return strings as values! Otherwise you might have problems to convert the values to an URL part. |
 | match | The complete (unhandled) expression of the argument. |
 | formatExpr | The optional format expression of the argument. For `{id:number}` this will be `number`. |
 | funcDepth | This value is `0` at the beginning. If you return a function in that function again, this will increase until you stop to return a function. |
@@ -229,7 +229,7 @@ and start a request like this
 ```typescript
 client.get({
     routeParams: {
-        id: 5979,
+        id: "5979",
         resource: "profile"
     }
 });
