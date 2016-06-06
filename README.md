@@ -202,7 +202,7 @@ client.addFormatProvider((ctx : ApiClient.IFormatProvider) => {
         }
         
         ctx.handled = true;
-        return n;
+        return n.toString();
     }
 });
 ```
