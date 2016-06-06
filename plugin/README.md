@@ -607,7 +607,7 @@ function (paramName: string, index: number, funcDepth: string) : any {
 | index | The zero based index of the handled URL parameter. |
 | funcDepth | This value is `0` at the beginning. If you return a function in that function again, this will increase until you stop to return a function. |
 
-IMPORTANT: It is also recommended to use / return strings a parameter values to prevent problem by converting the values to an URL string.
+IMPORTANT: It is also recommended to use / return strings a parameter values to prevent problems when converting the values to an URL string.
 
 ## Responses
 
