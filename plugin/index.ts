@@ -1120,7 +1120,7 @@ export class BasicAuth implements IAuthorizer {
     
     /** @inheritdoc */
     public prepare(reqOpts : HTTP.HttpRequestOptions) {
-        reqOpts.headers["Authorization"] = "Basic " + btoa(this._username + ":" + this._password);
+        reqOpts.headers["Authorization"] = "Basic " + encodeBase64(this._username + ":" + this._password);
     }
     
     /**
@@ -2531,6 +2531,55 @@ export enum LogSource {
      * From IApiClientResult object
      */
     Result
+}
+
+function encodeBase64(str: string) {
+    if (isEmptyString(str)) {
+        return str;
+    }
+
+    var padChar = '=';
+    var alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    var getByte = function(s: string, i: number) {
+        var cc = s.charCodeAt(i);
+        if (cc > 255) {
+            throw "INVALID_CHARACTER_ERR: DOM Exception 5";
+        }
+
+        return cc;
+    }
+
+    var b10, i;
+    var b64Chars = [];
+
+    var iMax = str.length - str.length % 3;
+
+    for (i = 0; i < iMax; i += 3) {
+        b10 = (getByte(str, i) << 16) |
+              (getByte(str, i + 1) << 8) |
+              getByte(str, i + 2);
+
+        b64Chars.push(alpha.charAt(b10 >> 18));
+        b64Chars.push(alpha.charAt((b10 >> 12) & 0x3F));
+        b64Chars.push(alpha.charAt((b10 >> 6) & 0x3f));
+        b64Chars.push(alpha.charAt(b10 & 0x3f));
+    }
+
+    switch (str.length - iMax) {
+        case 1:
+            b10 = getByte(str, i) << 16;
+            b64Chars.push(alpha.charAt(b10 >> 18) + alpha.charAt((b10 >> 12) & 0x3F) +
+                          padChar + padChar);
+            break;
+        
+        case 2:
+            b10 = (getByte(str, i) << 16) | (getByte(str, i + 1) << 8);
+            b64Chars.push(alpha.charAt(b10 >> 18) + alpha.charAt((b10 >> 12) & 0x3F) +
+                          alpha.charAt((b10 >> 6) & 0x3F) + padChar);
+            break;
+    }
+
+    return b64Chars.join('');
 }
 
 function getOwnProperties(obj) {
