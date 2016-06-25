@@ -299,6 +299,21 @@ var authorizer = new ApiClient.BasicAuth("Username", "Password");
 var authorizer = new ApiClient.BearerAuth("MySecretToken");
 ```
 
+### OAuth
+
+```typescript
+var authorizer = new ApiClient.OAuth("MySecretToken");
+authorizer.setField('oauth_field1', 'field1_value');
+authorizer.setField('oauth_field2', 'field2_value');
+```
+
+### TwitterOAuth
+
+```typescript
+var authorizer = new ApiClient.TwitterOAuth("<CONSUMER_KEY>", "<CONSUMER_SECRET>",
+                                            "<TOKEN>", "<TOKEN_SECRET>");
+```
+
 ## Requests
 
 ### GET
