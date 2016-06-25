@@ -449,7 +449,7 @@ class ApiClient extends LoggerBase implements IApiClient {
 
     public request(method : any, opts? : IRequestOptions) {
         var me = this;
-        
+
         var convertToString = function(val: any) : string {
             if (TypeUtils.isNullOrUndefined(val)) {
                 return null;
@@ -590,11 +590,13 @@ class ApiClient extends LoggerBase implements IApiClient {
 
         var content;
         var encoding = "utf-8";
+        var tag;
         
         var contentConverter = (c) => c;
         
         if (!TypeUtils.isNullOrUndefined(opts)) {
             content = opts.content;
+            tag = opts.tag;
             
             // encoding
             if (!isEmptyString(opts.encoding)) {
@@ -667,7 +669,7 @@ class ApiClient extends LoggerBase implements IApiClient {
         // before send actions
         for (var i = 0; i < me.beforeSendActions.length; i++) {
             var bsa = me.beforeSendActions[i];
-            bsa(httpRequestOpts, opts.tag);
+            bsa(httpRequestOpts, tag);
         }
         
         var httpReq = new HttpRequest(me, httpRequestOpts);
@@ -681,7 +683,7 @@ class ApiClient extends LoggerBase implements IApiClient {
         
         if (!TypeUtils.isNullOrUndefined(urlParams)) {
             for (var up in urlParams) {
-                me.dbg("UrlParameter[" + up + "]: " + urlParams[rp], "HttpRequestOptions");
+                me.dbg("UrlParameter[" + up + "]: " + urlParams[up], "HttpRequestOptions");
             }
         }
 
@@ -697,7 +699,7 @@ class ApiClient extends LoggerBase implements IApiClient {
             if (!TypeUtils.isNullOrUndefined(me.completeAction)) {
                 me.completeAction(new ApiClientCompleteContext(me, httpReq,
                                                                result, err,
-                                                               opts.tag));
+                                                               tag));
             }
         };
 
@@ -705,7 +707,7 @@ class ApiClient extends LoggerBase implements IApiClient {
             HTTP.request(httpRequestOpts)
                 .then(function (response) {
                           var result = new ApiClientResult(me, httpReq, response,
-                                                           opts.tag);
+                                                           tag);
                           result.setContext(ApiClientResultContext.Success);
 
                           me.dbg("Status code: " + result.code, getLogTag());
@@ -751,7 +753,7 @@ class ApiClient extends LoggerBase implements IApiClient {
                           
                           var errCtx = new ApiClientError(me, httpReq,
                                                           err, ApiClientErrorContext.ClientError,
-                                                          opts.tag);
+                                                          tag);
                         
                           if (!TypeUtils.isNullOrUndefined(me.errorAction)) {
                               errCtx.handled = true;
@@ -770,7 +772,7 @@ class ApiClient extends LoggerBase implements IApiClient {
             
             var errCtx = new ApiClientError(me, httpReq,
                                             e, ApiClientErrorContext.Exception,
-                                            opts.tag);
+                                            tag);
             
             if (!TypeUtils.isNullOrUndefined(me.errorAction)) {
                 errCtx.handled = true;
@@ -2531,6 +2533,163 @@ export enum LogSource {
      * From IApiClientResult object
      */
     Result
+}
+
+/**
+ * OAuth authorizer
+ */
+export class OAuth implements IAuthorizer {
+    private _fields = {};
+    
+    /** @inheritdoc */
+    public prepare(reqOpts : HTTP.HttpRequestOptions) {
+        var i = 0;
+        var fieldList = '';
+        for (var f in this._fields) {
+            var v = this._fields[f];
+
+            if (i > 0) {
+                fieldList += ', ';
+            }
+
+            fieldList += f + '=' + '"' + encodeURIComponent(v) + '"';
+            ++i;
+        }
+
+        reqOpts.headers["Authorization"] = 'OAuth ' + fieldList;
+    }
+
+    /**
+     * Sets a field.
+     * 
+     * @chainable
+     * 
+     * @param {String} name The name of the field.
+     * @param {String} value The value of the field.
+     */
+    public setField(name: string, value: any): OAuth {
+        this._fields[name] = value;
+        return this;
+    }
+
+    /**
+     * Sets a list of fields.
+     * 
+     * @chainable
+     * 
+     * @param any ...fields One or more object with fields an their values.
+     */
+    public setMany(...fields: any[]): OAuth {
+        for (var i = 0; i < fields.length; i++) {
+            var fieldObj = getOwnProperties(fields[i]);
+            if (TypeUtils.isNullOrUndefined(fieldObj)) {
+                continue;
+            }
+
+            for (var f in fieldObj) {
+                this.setField(f, fieldObj[f]);
+            }
+        }
+
+        return this;
+    }
+}
+
+/**
+ * Twitter OAuth authorizer.
+ */
+export class TwitterOAuth extends OAuth {
+    private _consumerKey: string;
+    private _consumerSecret: string;
+    private _token: string;
+    private _tokenSecret: string;
+    
+    /**
+     * Initializes a new instance of that class.
+     * 
+     * @param {String} consumerKey The consumer key.
+     * @param {String} consumerSecret The consumer secret.
+     * @param {String} token The token.
+     * @param {String} tokenSecret The token secret.
+     */
+    constructor(consumerKey: string, consumerSecret: string,
+                token: string, tokenSecret: string) {
+        
+        super();
+
+        this._consumerKey = consumerKey;
+        this._consumerSecret = consumerSecret;
+        this._token = token;
+        this._tokenSecret = tokenSecret;
+
+        // initial value for 'nonce' property
+        const NONCE_CHARS = '0123456789abcdef';    
+        this.nonce = '';
+        for (var i = 0; i < 32; i++) {
+            this.nonce += NONCE_CHARS[Math.floor(Math.random() * NONCE_CHARS.length) % NONCE_CHARS.length];
+        }
+    }
+
+    /** @inheritdoc */
+    public prepare(reqOpts : HTTP.HttpRequestOptions) {
+        var timestamp = this.timestamp;
+        if (TypeUtils.isNullOrUndefined(timestamp)) {
+            timestamp = new Date();
+        }
+
+        if (!isEmptyString(this._consumerKey)) {
+            this.setField('oauth_consumer_key', this._consumerKey);
+        }
+
+        if (!TypeUtils.isNullOrUndefined(this.nonce)) {
+            this.setField('oauth_nonce', this.nonce);
+        }
+
+        if (!TypeUtils.isNullOrUndefined(this.signature)) {
+            this.setField('oauth_signature', this.signature);
+        }
+
+        if (!isEmptyString(this.signatureMethod)) {
+            this.setField('oauth_signature_method', this.signatureMethod);
+        }
+
+        this.setField('oauth_timestamp', Math.floor(timestamp.getTime() / 1000.0));
+
+        if (!isEmptyString(this._token)) {
+            this.setField('oauth_token', this._token);
+        }
+
+        if (!isEmptyString(this.version)) {
+            this.setField('oauth_version', this.version);
+        }
+
+        super.prepare(reqOpts);
+    }
+
+    /**
+     * Gets or sets the value for "oauth_nonce" (custom random crypto key).
+     */
+    public nonce: string;
+
+    /**
+     * Gets or sets the value for "oauth_signature".
+     */
+    public signature: string;
+
+    /**
+     * Gets or sets the value for "oauth_signature_method".
+     */
+    public signatureMethod: string = 'HMAC-SHA1';
+    
+    /**
+     * Gets or sets the value for "oauth_timestamp".
+     */
+    public timestamp: Date;
+
+    /**
+     * Gets or sets the value for "oauth_version".
+     */
+    public version: string = '1.0';
 }
 
 function encodeBase64(str: string) {

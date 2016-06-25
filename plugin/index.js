@@ -441,9 +441,11 @@ var ApiClient = (function (_super) {
         }
         var content;
         var encoding = "utf-8";
+        var tag;
         var contentConverter = function (c) { return c; };
         if (!TypeUtils.isNullOrUndefined(opts)) {
             content = opts.content;
+            tag = opts.tag;
             // encoding
             if (!isEmptyString(opts.encoding)) {
                 encoding = opts.encoding.toLowerCase().trim();
@@ -503,7 +505,7 @@ var ApiClient = (function (_super) {
         // before send actions
         for (var i = 0; i < me.beforeSendActions.length; i++) {
             var bsa = me.beforeSendActions[i];
-            bsa(httpRequestOpts, opts.tag);
+            bsa(httpRequestOpts, tag);
         }
         var httpReq = new HttpRequest(me, httpRequestOpts);
         me.dbg("URL: " + httpRequestOpts.url, "HttpRequestOptions");
@@ -513,7 +515,7 @@ var ApiClient = (function (_super) {
         }
         if (!TypeUtils.isNullOrUndefined(urlParams)) {
             for (var up in urlParams) {
-                me.dbg("UrlParameter[" + up + "]: " + urlParams[rp], "HttpRequestOptions");
+                me.dbg("UrlParameter[" + up + "]: " + urlParams[up], "HttpRequestOptions");
             }
         }
         var getLogTag = function () {
@@ -524,13 +526,13 @@ var ApiClient = (function (_super) {
                 result.setContext(ApiClientResultContext.Complete);
             }
             if (!TypeUtils.isNullOrUndefined(me.completeAction)) {
-                me.completeAction(new ApiClientCompleteContext(me, httpReq, result, err, opts.tag));
+                me.completeAction(new ApiClientCompleteContext(me, httpReq, result, err, tag));
             }
         };
         try {
             HTTP.request(httpRequestOpts)
                 .then(function (response) {
-                var result = new ApiClientResult(me, httpReq, response, opts.tag);
+                var result = new ApiClientResult(me, httpReq, response, tag);
                 result.setContext(ApiClientResultContext.Success);
                 me.dbg("Status code: " + result.code, getLogTag());
                 for (var h in getOwnProperties(result.headers)) {
@@ -563,7 +565,7 @@ var ApiClient = (function (_super) {
                 invokeComplete(result, undefined);
             }, function (err) {
                 me.err("[ERROR]: " + err, getLogTag());
-                var errCtx = new ApiClientError(me, httpReq, err, ApiClientErrorContext.ClientError, opts.tag);
+                var errCtx = new ApiClientError(me, httpReq, err, ApiClientErrorContext.ClientError, tag);
                 if (!TypeUtils.isNullOrUndefined(me.errorAction)) {
                     errCtx.handled = true;
                     me.errorAction(errCtx);
@@ -576,7 +578,7 @@ var ApiClient = (function (_super) {
         }
         catch (e) {
             me.crit("[FATAL ERROR]: " + e, getLogTag());
-            var errCtx = new ApiClientError(me, httpReq, e, ApiClientErrorContext.Exception, opts.tag);
+            var errCtx = new ApiClientError(me, httpReq, e, ApiClientErrorContext.Exception, tag);
             if (!TypeUtils.isNullOrUndefined(me.errorAction)) {
                 errCtx.handled = true;
                 me.errorAction(errCtx);
@@ -1196,6 +1198,129 @@ var LogPriority = exports.LogPriority;
     LogSource[LogSource["Result"] = 3] = "Result";
 })(exports.LogSource || (exports.LogSource = {}));
 var LogSource = exports.LogSource;
+/**
+ * OAuth authorizer
+ */
+var OAuth = (function () {
+    function OAuth() {
+        this._fields = {};
+    }
+    /** @inheritdoc */
+    OAuth.prototype.prepare = function (reqOpts) {
+        var i = 0;
+        var fieldList = '';
+        for (var f in this._fields) {
+            var v = this._fields[f];
+            if (i > 0) {
+                fieldList += ', ';
+            }
+            fieldList += f + '=' + '"' + encodeURIComponent(v) + '"';
+            ++i;
+        }
+        reqOpts.headers["Authorization"] = 'OAuth ' + fieldList;
+    };
+    /**
+     * Sets a field.
+     *
+     * @chainable
+     *
+     * @param {String} name The name of the field.
+     * @param {String} value The value of the field.
+     */
+    OAuth.prototype.setField = function (name, value) {
+        this._fields[name] = value;
+        return this;
+    };
+    /**
+     * Sets a list of fields.
+     *
+     * @chainable
+     *
+     * @param any ...fields One or more object with fields an their values.
+     */
+    OAuth.prototype.setMany = function () {
+        var fields = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            fields[_i - 0] = arguments[_i];
+        }
+        for (var i = 0; i < fields.length; i++) {
+            var fieldObj = getOwnProperties(fields[i]);
+            if (TypeUtils.isNullOrUndefined(fieldObj)) {
+                continue;
+            }
+            for (var f in fieldObj) {
+                this.setField(f, fieldObj[f]);
+            }
+        }
+        return this;
+    };
+    return OAuth;
+}());
+exports.OAuth = OAuth;
+/**
+ * Twitter OAuth authorizer.
+ */
+var TwitterOAuth = (function (_super) {
+    __extends(TwitterOAuth, _super);
+    /**
+     * Initializes a new instance of that class.
+     *
+     * @param {String} consumerKey The consumer key.
+     * @param {String} consumerSecret The consumer secret.
+     * @param {String} token The token.
+     * @param {String} tokenSecret The token secret.
+     */
+    function TwitterOAuth(consumerKey, consumerSecret, token, tokenSecret) {
+        _super.call(this);
+        /**
+         * Gets or sets the value for "oauth_signature_method".
+         */
+        this.signatureMethod = 'HMAC-SHA1';
+        /**
+         * Gets or sets the value for "oauth_version".
+         */
+        this.version = '1.0';
+        this._consumerKey = consumerKey;
+        this._consumerSecret = consumerSecret;
+        this._token = token;
+        this._tokenSecret = tokenSecret;
+        // initial value for 'nonce' property
+        var NONCE_CHARS = '0123456789abcdef';
+        this.nonce = '';
+        for (var i = 0; i < 32; i++) {
+            this.nonce += NONCE_CHARS[Math.floor(Math.random() * NONCE_CHARS.length) % NONCE_CHARS.length];
+        }
+    }
+    /** @inheritdoc */
+    TwitterOAuth.prototype.prepare = function (reqOpts) {
+        var timestamp = this.timestamp;
+        if (TypeUtils.isNullOrUndefined(timestamp)) {
+            timestamp = new Date();
+        }
+        if (!isEmptyString(this._consumerKey)) {
+            this.setField('oauth_consumer_key', this._consumerKey);
+        }
+        if (!TypeUtils.isNullOrUndefined(this.nonce)) {
+            this.setField('oauth_nonce', this.nonce);
+        }
+        if (!TypeUtils.isNullOrUndefined(this.signature)) {
+            this.setField('oauth_signature', this.signature);
+        }
+        if (!isEmptyString(this.signatureMethod)) {
+            this.setField('oauth_signature_method', this.signatureMethod);
+        }
+        this.setField('oauth_timestamp', Math.floor(timestamp.getTime() / 1000.0));
+        if (!isEmptyString(this._token)) {
+            this.setField('oauth_token', this._token);
+        }
+        if (!isEmptyString(this.version)) {
+            this.setField('oauth_version', this.version);
+        }
+        _super.prototype.prepare.call(this, reqOpts);
+    };
+    return TwitterOAuth;
+}(OAuth));
+exports.TwitterOAuth = TwitterOAuth;
 function encodeBase64(str) {
     if (isEmptyString(str)) {
         return str;
