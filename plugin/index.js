@@ -589,7 +589,8 @@ var ApiClient = (function (_super) {
             invokeComplete(undefined, errCtx);
         }
     };
-    ApiClient.prototype.setAuthorizer = function (authorizer) {
+    ApiClient.prototype.setAuthorizer = function (newAuthorizer) {
+        this.authorizer = newAuthorizer;
         return this;
     };
     ApiClient.prototype.serverError = function (serverErrAction) {

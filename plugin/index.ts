@@ -791,7 +791,8 @@ class ApiClient extends LoggerBase implements IApiClient {
     
     public routeParams: any;
     
-    public setAuthorizer(authorizer: IAuthorizer) : ApiClient {
+    public setAuthorizer(newAuthorizer: IAuthorizer) : ApiClient {
+        this.authorizer = newAuthorizer;
         return this;
     }
     
