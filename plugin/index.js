@@ -394,15 +394,13 @@ var ApiClient = (function (_super) {
             url += route;
         }
         var httpRequestOpts = {};
-        // initialize with default headers
-        httpRequestOpts.headers = getOwnProperties(me.headers);
-        if (TypeUtils.isNullOrUndefined(httpRequestOpts.headers)) {
-            httpRequestOpts.headers = {};
-        }
-        var urlParams;
-        if (!TypeUtils.isNullOrUndefined(opts)) {
-            // request headers
-            var allRequestHeaders = [getOwnProperties(opts.headers)];
+        // request headers
+        httpRequestOpts.headers = {};
+        {
+            var allRequestHeaders = [getOwnProperties(me.headers)];
+            if (!TypeUtils.isNullOrUndefined(opts)) {
+                allRequestHeaders.push(getOwnProperties(opts.headers));
+            }
             for (var i = 0; i < allRequestHeaders.length; i++) {
                 var requestHeaders = allRequestHeaders[i];
                 if (TypeUtils.isNullOrUndefined(requestHeaders)) {
@@ -412,14 +410,15 @@ var ApiClient = (function (_super) {
                     httpRequestOpts.headers[rqh] = requestHeaders[rqh];
                 }
             }
-            // timeout
-            if (!TypeUtils.isNullOrUndefined(opts.timeout)) {
-                httpRequestOpts.timeout = opts.timeout;
+        }
+        // URL parameters
+        {
+            var allUrlParams = [getOwnProperties(me.params)];
+            if (!TypeUtils.isNullOrUndefined(opts)) {
+                allUrlParams.push(getOwnProperties(opts.params));
             }
-            // URL parameters
             var urlParamCount = 0;
             var urlParamSuffix = "";
-            var allUrlParams = [getOwnProperties(me.params), getOwnProperties(opts.params)];
             for (var i = 0; i < allUrlParams.length; i++) {
                 var urlParams = allUrlParams[i];
                 if (TypeUtils.isNullOrUndefined(urlParams)) {
@@ -440,7 +439,13 @@ var ApiClient = (function (_super) {
                 }
             }
             if (urlParamCount > 0) {
-                url += "?" + urlParamSuffix;
+                url += urlParamSuffix;
+            }
+        }
+        if (!TypeUtils.isNullOrUndefined(opts)) {
+            // timeout
+            if (!TypeUtils.isNullOrUndefined(opts.timeout)) {
+                httpRequestOpts.timeout = opts.timeout;
             }
         }
         var content;
