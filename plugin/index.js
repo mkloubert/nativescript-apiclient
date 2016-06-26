@@ -394,11 +394,15 @@ var ApiClient = (function (_super) {
             url += route;
         }
         var httpRequestOpts = {};
-        httpRequestOpts.headers = {};
+        // initialize with default headers
+        httpRequestOpts.headers = getOwnProperties(me.headers);
+        if (TypeUtils.isNullOrUndefined(httpRequestOpts.headers)) {
+            httpRequestOpts.headers = {};
+        }
         var urlParams;
         if (!TypeUtils.isNullOrUndefined(opts)) {
             // request headers
-            var allRequestHeaders = [getOwnProperties(me.headers), getOwnProperties(opts.headers)];
+            var allRequestHeaders = [getOwnProperties(opts.headers)];
             for (var i = 0; i < allRequestHeaders.length; i++) {
                 var requestHeaders = allRequestHeaders[i];
                 if (TypeUtils.isNullOrUndefined(requestHeaders)) {
