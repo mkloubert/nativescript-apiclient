@@ -98,13 +98,13 @@ for (var userId = 1; userId <= 100; userId++) {
     
         // request headers
         headers: {
-            'X-MyHeader-TM': 5979,
-            'X-MyHeader-MK': 23979
+            'X-MyHeader-TM': '5979',
+            'X-MyHeader-MK': '23979'
         },
         
         // URL parameters
         params: {
-            ver: 1.6.6.6
+            ver: '1.6.6.6'
         },
     
         // route parameters
@@ -326,8 +326,8 @@ var authorizer = new ApiClient.TwitterOAuth("<CONSUMER_KEY>", "<CONSUMER_SECRET>
 // ?TM=5979&MK=23979
 client.get({
     params: {
-        TM: 5979,
-        MK: 23979
+        TM: '5979',
+        MK: '23979'
     }
 });
 ```
@@ -585,7 +585,7 @@ and start a request like this
 ```typescript
 client.get({
     params: {
-        id: 23979,
+        id: '23979',
         resource: "profile"
     }
 });

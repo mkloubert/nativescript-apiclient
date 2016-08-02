@@ -1,7 +1,7 @@
 {
   "name": "nativescript-apiclient",
   "description": "NativeScript module for simply calling HTTP based APIs.",
-  "version": "1.12.7",
+  "version": "1.12.8",
   "nativescript": {
     "platforms": {
       "android": "1.1.0",
