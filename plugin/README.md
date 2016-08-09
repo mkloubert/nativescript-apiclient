@@ -197,7 +197,7 @@ client.addFormatProvider((ctx : ApiClient.IFormatProvider) => {
 
     if (ctx.expression === "upper") {    
         ctx.handled = true;
-        return toStringSafe().toLowerCase();  // the new value
+        return toStringSafe().toUpperCase();  // the new value
     }
     else if (ctx.expression === "number") {
         var n = parseInt(toStringSafe().trim());
