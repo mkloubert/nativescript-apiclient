@@ -1,11 +1,11 @@
 {
   "name": "nativescript-apiclient",
   "description": "NativeScript module for simply calling HTTP based APIs.",
-  "version": "1.13.0",
+  "version": "3.0.0",
   "nativescript": {
     "platforms": {
-      "android": "1.1.0",
-      "ios": "1.0.0"
+      "android": "3.0.0",
+      "ios": "3.0.0"
     }
   },
   "repository": {
@@ -32,5 +32,16 @@
     "url": "https://github.com/mkloubert/nativescript-apiclient/issues"
   },
   "homepage": "https://github.com/mkloubert/nativescript-apiclient",
-  "readmeFilename": "README.md"
+  "readmeFilename": "README.md",
+  "devDependencies": {
+    "tns-core-modules": "^3.0.0",
+    "tns-platform-declarations": "^3.0.0",
+    "typescript": "^2.2.2"
+  },
+  "peerDependencies": {
+    "tns-core-modules": "^3.0.0"
+  },
+  "scripts": {
+    "postinstall": "tsc"
+  }
 }

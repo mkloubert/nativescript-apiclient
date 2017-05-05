@@ -20,24 +20,23 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-import Application = require("application");
-import FileSystem = require("file-system"); 
-import HTTP = require("http");
-import Image = require("image-source");
-import TypeUtils = require("utils/types");
-import Xml = require("xml");
-
+import * as Application from "application";
+import * as FileSystem from "file-system";
+import * as HTTP from "http";
+import * as Image from "image-source";
+import * as TypeUtils from "utils/types";
+import * as Xml from "xml";
 
 /**
  * A basic logger.
  */
 export abstract class LoggerBase implements ILogger {
     /** @inheritdoc */
-    public alert(msg : any, tag?: string, priority?: LogPriority) : LoggerBase {        
+    public alert(msg: any, tag?: string, priority?: LogPriority): LoggerBase {
         return this.log(msg, tag,
-                        LogCategory.Alert, priority);
+            LogCategory.Alert, priority);
     }
-    
+
     /**
      * Creates a ILogMessage object.
      * 
@@ -46,80 +45,80 @@ export abstract class LoggerBase implements ILogger {
      * @param LogCategory category The log category.
      * @param {LogPriority} priority The log priority.
      */
-    protected abstract createLogMessage(msg : any, tag: string,
-                                        category: LogCategory, priority: LogPriority) : ILogMessage;
-    
+    protected abstract createLogMessage(msg: any, tag: string,
+        category: LogCategory, priority: LogPriority): ILogMessage;
+
     /** @inheritdoc */
-    public crit(msg : any, tag?: string, priority?: LogPriority) : LoggerBase {        
+    public crit(msg: any, tag?: string, priority?: LogPriority): LoggerBase {
         return this.log(msg, tag,
-                        LogCategory.Critical, priority);
+            LogCategory.Critical, priority);
     }
-    
+
     /** @inheritdoc */
-    public dbg(msg : any, tag?: string, priority?: LogPriority) : LoggerBase {        
+    public dbg(msg: any, tag?: string, priority?: LogPriority): LoggerBase {
         return this.log(msg, tag,
-                        LogCategory.Debug, priority);
+            LogCategory.Debug, priority);
     }
-    
+
     /** @inheritdoc */
-    public emerg(msg : any, tag?: string, priority?: LogPriority) : LoggerBase {        
+    public emerg(msg: any, tag?: string, priority?: LogPriority): LoggerBase {
         return this.log(msg, tag,
-                        LogCategory.Emergency, priority);
+            LogCategory.Emergency, priority);
     }
-    
+
     /** @inheritdoc */
-    public err(msg : any, tag?: string, priority?: LogPriority) : LoggerBase {        
+    public err(msg: any, tag?: string, priority?: LogPriority): LoggerBase {
         return this.log(msg, tag,
-                        LogCategory.Error, priority);
+            LogCategory.Error, priority);
     }
-    
+
     /** @inheritdoc */
-    public info(msg : any, tag?: string, priority?: LogPriority) : LoggerBase {        
+    public info(msg: any, tag?: string, priority?: LogPriority): LoggerBase {
         return this.log(msg, tag,
-                        LogCategory.Info, priority);
+            LogCategory.Info, priority);
     }
-    
+
     /** @inheritdoc */
-    public log(msg : any, tag?: string,
-               category?: LogCategory, priority?: LogPriority) : LoggerBase {
-        
+    public log(msg: any, tag?: string,
+        category?: LogCategory, priority?: LogPriority): LoggerBase {
+
         if (isEmptyString(tag)) {
             tag = null;
         }
         else {
             tag = tag.toUpperCase().trim();
         }
-        
+
         if (TypeUtils.isNullOrUndefined(category)) {
             category = LogCategory.Debug;
         }
-        
+
         this.onLog(this.createLogMessage(msg, tag,
-                                         category, priority));
-        return this;    
+            category, priority));
+        return this;
     }
-    
+
     /** @inheritdoc */
-    public note(msg : any, tag?: string, priority?: LogPriority) : LoggerBase {        
+    public note(msg: any, tag?: string, priority?: LogPriority): LoggerBase {
         return this.log(msg, tag,
-                        LogCategory.Notice, priority);
+            LogCategory.Notice, priority);
     }
-    
+
     /**
      * The logic for the 'log' method.
      */
-    protected abstract onLog(msg : ILogMessage);
-    
+    protected abstract onLog(msg: ILogMessage);
+
     /** @inheritdoc */
-    public trace(msg : any, tag?: string, priority?: LogPriority) : LoggerBase {        
+    public trace(msg: any, tag?: string, priority?: LogPriority): LoggerBase {
         return this.log(msg, tag,
-                        LogCategory.Trace, priority);
+            LogCategory.Trace, priority);
     }
-    
+
     /** @inheritdoc */
-    public warn(msg : any, tag?: string, priority?: LogPriority) : LoggerBase {        
+    public warn(msg: any, tag?: string, priority?: LogPriority): LoggerBase {
         return this.log(msg, tag,
-                        LogCategory.Warning, priority);
+            LogCategory.Warning, priority);
     }
 }
 
@@ -128,22 +127,22 @@ export abstract class LoggerBase implements ILogger {
  * authorizers to execute.
  */
 export class AggregateAuthorizer implements IAuthorizer {
-    private _authorizers : IAuthorizer[] = [];
-    
+    private _authorizers: IAuthorizer[] = [];
+
     /**
      * Adds one or more authorizers.
      * 
      * @param {IAuthorizer} ...authorizers One or more authorizers to add.
      */
-    public addAuthorizers(...authorizers : IAuthorizer[]) {
+    public addAuthorizers(...authorizers: IAuthorizer[]) {
         for (var i = 0; i < authorizers.length; i++) {
             this._authorizers
                 .push(authorizers[i]);
         }
     }
-    
+
     /** @inheritdoc */
-    public prepare(reqOpts : HTTP.HttpRequestOptions) {
+    public prepare(reqOpts: HTTP.HttpRequestOptions) {
         for (var i = 0; i < this._authorizers.length; i++) {
             this._authorizers[i]
                 .prepare(reqOpts);
@@ -152,225 +151,225 @@ export class AggregateAuthorizer implements IAuthorizer {
 }
 
 class ApiClient extends LoggerBase implements IApiClient {
-    constructor(cfg : IApiClientConfig) {
+    constructor(cfg: IApiClientConfig) {
         super();
-        
+
         this.baseUrl = cfg.baseUrl;
         this.headers = cfg.headers;
         this.route = cfg.route;
         this.routeParams = cfg.routeParams;
         this.params = cfg.params;
         this.authorizer = cfg.authorizer;
-        
+
         // beforeSend()
         if (!TypeUtils.isNullOrUndefined(cfg.beforeSend)) {
             this.beforeSend(cfg.beforeSend);
         }
-        
+
         // success action
         if (!TypeUtils.isNullOrUndefined(cfg.success)) {
             this.successAction = cfg.success;
         }
-        
+
         // error action
         if (!TypeUtils.isNullOrUndefined(cfg.error)) {
             this.errorAction = cfg.error;
         }
-        
+
         // complete action
         if (!TypeUtils.isNullOrUndefined(cfg.complete)) {
             this.completeAction = cfg.complete;
         }
-        
+
         // notFound()
         if (!TypeUtils.isNullOrUndefined(cfg.notFound)) {
             this.notFound(cfg.notFound);
         }
-        
+
         // unauthorized()
         if (!TypeUtils.isNullOrUndefined(cfg.unauthorized)) {
             this.unauthorized(cfg.unauthorized);
         }
-        
+
         // forbidden()
         if (!TypeUtils.isNullOrUndefined(cfg.forbidden)) {
             this.forbidden(cfg.forbidden);
         }
-        
+
         // succeededRequest()
         if (!TypeUtils.isNullOrUndefined(cfg.succeededRequest)) {
             this.succeededRequest(cfg.succeededRequest);
         }
-        
+
         // redirection()
         if (!TypeUtils.isNullOrUndefined(cfg.redirection)) {
             this.redirection(cfg.redirection);
         }
-        
+
         // clientError()
         if (!TypeUtils.isNullOrUndefined(cfg.clientError)) {
             this.clientError(cfg.clientError);
         }
-        
+
         // serverError()
         if (!TypeUtils.isNullOrUndefined(cfg.serverError)) {
             this.serverError(cfg.serverError);
         }
-        
+
         // ok()
         if (!TypeUtils.isNullOrUndefined(cfg.ok)) {
             this.ok(cfg.ok);
         }
-        
+
         // status code
         for (var p in cfg) {
             var statusCode = parseInt(p);
             if (!isNaN(statusCode)) {
                 if (statusCode >= 200 && statusCode <= 599) {
-                    this.status(statusCode, cfg[p]);    
+                    this.status(statusCode, cfg[p]);
                 }
             }
         }
-        
+
         // ifStatus()
         if (!TypeUtils.isNullOrUndefined(cfg.ifStatus)) {
             for (var i = 0; i < cfg.ifStatus.length; i++) {
                 var ise = <IIfStatus>cfg.ifStatus[i];
                 if (!TypeUtils.isNullOrUndefined(ise)) {
                     this.ifStatus(ise.predicate,
-                                  ise.action);
+                        ise.action);
                 }
             }
         }
-        
+
         // if()
         if (!TypeUtils.isNullOrUndefined(cfg.if)) {
             for (var i = 0; i < cfg.if.length; i++) {
                 var ie = <IIfResponse>cfg.if[i];
                 if (!TypeUtils.isNullOrUndefined(ie)) {
                     this.if(ie.predicate,
-                            ie.action);
+                        ie.action);
                 }
             }
         }
     }
-    
-    public addFormatProvider(provider: (ctx: IFormatProviderContext) => any) : ApiClient {
+
+    public addFormatProvider(provider: (ctx: IFormatProviderContext) => any): ApiClient {
         if (!TypeUtils.isNullOrUndefined(provider)) {
             this.formatProviders.push(provider);
         }
-        
+
         return this;
     }
-    
-    public addLogger(logAction : (ctx : ILogMessage) => void) : ApiClient {
+
+    public addLogger(logAction: (ctx: ILogMessage) => void): ApiClient {
         if (!TypeUtils.isNullOrUndefined(logAction)) {
             this.logActions.push(logAction);
         }
-        
+
         return this;
     }
-    
+
     public authorizer: IAuthorizer;
-    
-    public badGateway(badGatewayAction : (result : IApiClientResult) => void) : ApiClient {
+
+    public badGateway(badGatewayAction: (result: IApiClientResult) => void): ApiClient {
         return this.status(502, badGatewayAction);
     }
-    
-    public badRequest(badRequestAction : (result : IApiClientResult) => void) : ApiClient {
+
+    public badRequest(badRequestAction: (result: IApiClientResult) => void): ApiClient {
         return this.status(400, badRequestAction);
     }
-    
-    public baseUrl : string;
-    
-    public beforeSend(beforeAction : (opts : HTTP.HttpRequestOptions, tag: any) => void) : ApiClient {
+
+    public baseUrl: string;
+
+    public beforeSend(beforeAction: (opts: HTTP.HttpRequestOptions, tag: any) => void): ApiClient {
         this.beforeSendActions.push(beforeAction);
         return this;
     }
-    
+
     public beforeSendActions = [];
-    
-    public clientError(clientErrAction : (result : IApiClientResult) => void) : ApiClient {
+
+    public clientError(clientErrAction: (result: IApiClientResult) => void): ApiClient {
         return this.ifStatus((code) => code >= 400 && code <= 499,
-                             clientErrAction);
+            clientErrAction);
     }
 
-    public clientOrServerError(clientSrvErrAction : (result : IApiClientResult) => void): IApiClient {
+    public clientOrServerError(clientSrvErrAction: (result: IApiClientResult) => void): IApiClient {
         this.clientError(clientSrvErrAction);
         this.serverError(clientSrvErrAction);
-        
+
         return this;
     }
-    
-    public complete(completeAction : (ctx : IApiClientCompleteContext) => void) : ApiClient {
+
+    public complete(completeAction: (ctx: IApiClientCompleteContext) => void): ApiClient {
         this.completeAction = completeAction;
         return this;
     }
-    
-    public completeAction : (ctx : IApiClientCompleteContext) => void;
 
-    public conflict(conflictAction : (result : IApiClientResult) => void) : ApiClient {
+    public completeAction: (ctx: IApiClientCompleteContext) => void;
+
+    public conflict(conflictAction: (result: IApiClientResult) => void): ApiClient {
         return this.status(409, conflictAction);
     }
-    
+
     protected createLogMessage(msg: any, tag: string,
-                               category : LogCategory, priority : LogPriority) : ILogMessage {
-        
+        category: LogCategory, priority: LogPriority): ILogMessage {
+
         return new LogMessage(LogSource.Client,
-                              new Date(),
-                              msg, tag,
-                              category, priority);
+            new Date(),
+            msg, tag,
+            category, priority);
     }
-    
-    public delete(opts? : IRequestOptions) {
+
+    public delete(opts?: IRequestOptions) {
         this.request("DELETE", opts);
     }
-    
-    public error(errAction : (ctx : IApiClientError) => void) : ApiClient {
+
+    public error(errAction: (ctx: IApiClientError) => void): ApiClient {
         this.errorAction = errAction;
         return this;
     }
-    
-    public errorAction : (ctx : IApiClientError) => void;
-    
+
+    public errorAction: (ctx: IApiClientError) => void;
+
     public formatProviders = [];
-    
-    public forbidden(forbiddenAction : (result : IApiClientResult) => void) : ApiClient {
+
+    public forbidden(forbiddenAction: (result: IApiClientResult) => void): ApiClient {
         return this.status(403, forbiddenAction);
     }
-    
-    public gatewayTimeout(timeoutAction : (result : IApiClientResult) => void) : ApiClient {
+
+    public gatewayTimeout(timeoutAction: (result: IApiClientResult) => void): ApiClient {
         return this.status(504, timeoutAction);
     }
-    
-    public get(opts? : IRequestOptions) {
+
+    public get(opts?: IRequestOptions) {
         return this.request("GET", opts);
     }
-    
-    public gone(goneAction : (result : IApiClientResult) => void) : ApiClient {
+
+    public gone(goneAction: (result: IApiClientResult) => void): ApiClient {
         return this.status(410, goneAction);
     }
-    
+
     public headers: any;
-    
-    public if(predicate: (ctx : IApiClientResult) => boolean,
-              statusAction : (result : IApiClientResult) => void) : ApiClient {
-        
+
+    public if(predicate: (ctx: IApiClientResult) => boolean,
+        statusAction: (result: IApiClientResult) => void): ApiClient {
+
         this.ifEntries.push({
             action: statusAction,
             predicate: predicate,
         });
-        return this; 
+        return this;
     }
-    
-    public ifEntries : IIfResponse[] = [];
-    
-    public ifStatus(predicate: (code : number) => boolean,
-                    statusAction : (result : IApiClientResult) => void) : ApiClient {
-        
-        var ifPredicate : (ctx : IApiClientResult) => boolean;
+
+    public ifEntries: IIfResponse[] = [];
+
+    public ifStatus(predicate: (code: number) => boolean,
+        statusAction: (result: IApiClientResult) => void): ApiClient {
+
+        var ifPredicate: (ctx: IApiClientResult) => boolean;
         if (!TypeUtils.isNullOrUndefined(predicate)) {
-            ifPredicate = function(ctx) : boolean {
+            ifPredicate = function (ctx): boolean {
                 return predicate(ctx.code);
             };
         }
@@ -380,99 +379,99 @@ class ApiClient extends LoggerBase implements IApiClient {
 
         return this.if(ifPredicate, statusAction);
     }
-    
-    public informational(infoAction: (result : IApiClientResult) => void) : ApiClient {
+
+    public informational(infoAction: (result: IApiClientResult) => void): ApiClient {
         return this.ifStatus((code) => code >= 100 && code <= 199,
-                             infoAction);
+            infoAction);
     }
 
-    public insufficientStorage(insufficientAction : (result : IApiClientResult) => void) : ApiClient {
+    public insufficientStorage(insufficientAction: (result: IApiClientResult) => void): ApiClient {
         return this.status(507, insufficientAction);
     }
 
-    public internalServerError(errAction : (result : IApiClientResult) => void) : ApiClient {
+    public internalServerError(errAction: (result: IApiClientResult) => void): ApiClient {
         return this.status(500, errAction);
     }
-    
-    public locked(lockedAction : (result : IApiClientResult) => void) : ApiClient {
+
+    public locked(lockedAction: (result: IApiClientResult) => void): ApiClient {
         return this.status(423, lockedAction);
     }
-    
+
     public logActions = [];
-    
-    public methodNotAllowed(notAllowedAction : (result : IApiClientResult) => void) : ApiClient {
+
+    public methodNotAllowed(notAllowedAction: (result: IApiClientResult) => void): ApiClient {
         return this.status(405, notAllowedAction);
     }
-    
-    public notFound(notFoundAction : (result : IApiClientResult) => void) : ApiClient {
+
+    public notFound(notFoundAction: (result: IApiClientResult) => void): ApiClient {
         return this.status(404, notFoundAction);
     }
-    
-    public notImplemented(notImplementedAction : (result : IApiClientResult) => void) : ApiClient {
+
+    public notImplemented(notImplementedAction: (result: IApiClientResult) => void): ApiClient {
         return this.status(501, notImplementedAction);
     }
-    
-    public ok(okAction : (result : IApiClientResult) => void) : ApiClient {
+
+    public ok(okAction: (result: IApiClientResult) => void): ApiClient {
         this.status(200, okAction);
         this.status(204, okAction);
         this.status(205, okAction);
-        
+
         return this;
     }
-    
-    protected onLog(msg : ILogMessage) {
+
+    protected onLog(msg: ILogMessage) {
         invokeLogActions(this, msg);
     }
 
     public params: any;
-    
-    public partialContent(partialAction: (result : IApiClientResult) => void) : IApiClient {
+
+    public partialContent(partialAction: (result: IApiClientResult) => void): IApiClient {
         return this.status(206, partialAction);
     }
-    
-    public patch(opts? : IRequestOptions) {
+
+    public patch(opts?: IRequestOptions) {
         return this.request("PATCH", opts);
     }
-    
-    public payloadTooLarge(tooLargeAction: (result : IApiClientResult) => void) : ApiClient {
+
+    public payloadTooLarge(tooLargeAction: (result: IApiClientResult) => void): ApiClient {
         return this.status(413, tooLargeAction);
     }
-    
-    public post(opts? : IRequestOptions) {
+
+    public post(opts?: IRequestOptions) {
         return this.request("POST", opts);
     }
-    
-    public put(opts? : IRequestOptions) {
+
+    public put(opts?: IRequestOptions) {
         return this.request("PUT", opts);
     }
-    
-    public redirection(redirectAction : (result : IApiClientResult) => void) : ApiClient {
+
+    public redirection(redirectAction: (result: IApiClientResult) => void): ApiClient {
         return this.ifStatus((code) => code >= 300 && code <= 399,
-                             redirectAction);
+            redirectAction);
     }
 
-    public request(method : any, opts? : IRequestOptions) {
+    public request(method: any, opts?: IRequestOptions) {
         var me = this;
 
-        var convertToString = function(val: any) : string {
+        var convertToString = function (val: any): string {
             if (TypeUtils.isNullOrUndefined(val)) {
                 return null;
             }
-            
+
             if (typeof val !== "string") {
                 val = JSON.stringify(getOwnProperties(val));
             }
-            
+
             return val;
         };
-        
+
         var url = this.baseUrl;
         var route = me.route;
         if (!isEmptyString(route)) {
             if ("/" !== url.substring(url.length - 1)) {
                 url += "/";
             }
-            
+
             // collect route parameters
             var routeParams = {};
             if (!TypeUtils.isNullOrUndefined(opts)) {
@@ -482,15 +481,15 @@ class ApiClient extends LoggerBase implements IApiClient {
                     if (TypeUtils.isNullOrUndefined(routeParamsTemp)) {
                         continue;
                     }
-                    
+
                     var alreadyHandledParamNames = {};
                     for (var rpt in routeParamsTemp) {
                         var routeParamName = rpt.toLowerCase().trim();
-                        
+
                         if (alreadyHandledParamNames[routeParamName] === true) {
                             throw "Route parameter '" + routeParamName + "' is ALREADY defined!";
                         }
-                        
+
                         routeParams[routeParamName] = routeParamsTemp[rpt];
                         alreadyHandledParamNames[routeParamName] = true;
                     }
@@ -498,45 +497,45 @@ class ApiClient extends LoggerBase implements IApiClient {
             }
 
             // parse route parameters
-            route = route.replace(/{(([^\:]+))(\:)?([^}]*)}/g, function(match, paramName, formatSeparator, formatExpr) : string {
+            route = route.replace(/{(([^\:]+))(\:)?([^}]*)}/g, function (match, paramName, formatSeparator, formatExpr): string {
                 paramName = paramName.toLowerCase().trim();
-                
+
                 var paramValue = routeParams[paramName];
-                
+
                 var funcDepth = -1;
                 while (typeof paramValue === "function") {
                     paramValue = paramValue(paramName, routeParams, match, formatExpr, ++funcDepth);
                 }
-                
+
                 if (formatSeparator === ':') {
                     // use format providers
-                    
+
                     for (var i = 0; i < me.formatProviders.length; i++) {
                         var fp = me.formatProviders[i];
                         var fpCtx = new FormatProviderContext(formatExpr, paramValue);
-                        
+
                         var fpResult = fp(fpCtx);
                         if (fpCtx.handled) {
                             // handled: first wins
-                    
+
                             paramValue = fpResult;
                             break;
                         }
                     }
                 }
-                
+
                 if (paramValue === undefined) {
                     throw "Route parameter '" + paramName + "' is NOT defined!";
                 }
-                
+
                 return convertToString(paramValue);
             });
-            
+
             url += route;
         }
 
-        var httpRequestOpts : any = {};
-        
+        var httpRequestOpts: any = {};
+
         // request headers
         httpRequestOpts.headers = {};
         {
@@ -550,13 +549,13 @@ class ApiClient extends LoggerBase implements IApiClient {
                 if (TypeUtils.isNullOrUndefined(requestHeaders)) {
                     continue;
                 }
-                
+
                 for (var rqh in requestHeaders) {
                     httpRequestOpts.headers[rqh] = requestHeaders[rqh];
                 }
             }
         }
-        
+
         // URL parameters
         {
             var allUrlParams = [getOwnProperties(me.params)];
@@ -578,7 +577,7 @@ class ApiClient extends LoggerBase implements IApiClient {
                     }
 
                     var urlParamName = up;
-                    
+
                     var funcDepth = 0;
                     var urlParamValue = urlParams[up];
                     while (typeof urlParamValue === "function") {
@@ -594,7 +593,7 @@ class ApiClient extends LoggerBase implements IApiClient {
                 url += urlParamSuffix;
             }
         }
-        
+
         if (!TypeUtils.isNullOrUndefined(opts)) {
             // timeout
             if (!TypeUtils.isNullOrUndefined(opts.timeout)) {
@@ -606,66 +605,66 @@ class ApiClient extends LoggerBase implements IApiClient {
         var content;
         var encoding = "utf-8";
         var tag;
-        
+
         var contentConverter = (c) => c;
-        
+
         if (!TypeUtils.isNullOrUndefined(opts)) {
             content = opts.content;
             tag = opts.tag;
-            
+
             // encoding
             if (!isEmptyString(opts.encoding)) {
                 encoding = opts.encoding.toLowerCase().trim();
             }
-            
+
             // request type
             if (!TypeUtils.isNullOrUndefined(opts.type)) {
                 switch (opts.type) {
                     case HttpRequestType.Binary:
                         httpRequestOpts.headers["Content-type"] = "application/octet-stream";
                         break;
-                        
+
                     case HttpRequestType.JSON:
                         httpRequestOpts.headers["Content-type"] = "application/json; charset=" + encoding;
-                        contentConverter = function(c) {
+                        contentConverter = function (c) {
                             if (null !== c) {
-                                c = JSON.stringify(c);  
+                                c = JSON.stringify(c);
                             }
-                            
-                            return c; 
+
+                            return c;
                         };
                         break;
-                        
+
                     case HttpRequestType.Text:
                         httpRequestOpts.headers["Content-type"] = "text/plain; charset=" + encoding;
-                        contentConverter = function(c) {
-                            return convertToString(c); 
+                        contentConverter = function (c) {
+                            return convertToString(c);
                         };
                         break;
-                        
+
                     case HttpRequestType.Xml:
                         httpRequestOpts.headers["Content-type"] = "text/xml; charset=" + encoding;
-                        contentConverter = function(c) {                            
+                        contentConverter = function (c) {
                             c = convertToString(c);
                             if (null !== c) {
                                 var isValidXml = true;
-                                var xmlParser = new Xml.XmlParser(() => {}, function(error: Error) {
+                                var xmlParser = new Xml.XmlParser(() => { }, function (error: Error) {
                                     isValidXml = false;
                                 });
-                                
+
                                 xmlParser.parse(c);
-                                
+
                                 if (!isValidXml) {
                                     throw "XML parse error.";
                                 }
                             }
-                            
-                            return c; 
+
+                            return c;
                         };
                         break;
                 }
             }
-            
+
             authorizer = opts.authorizer || authorizer;
         }
 
@@ -673,247 +672,247 @@ class ApiClient extends LoggerBase implements IApiClient {
         if (!TypeUtils.isNullOrUndefined(authorizer)) {
             authorizer.prepare(httpRequestOpts);
         }
-        
+
         if (TypeUtils.isNullOrUndefined(content)) {
             content = null;
         }
-        
+
         httpRequestOpts.url = encodeURI(url);
         httpRequestOpts.method = methodToString(method);
         httpRequestOpts.content = contentConverter(content);
-        
+
         // before send actions
         for (var i = 0; i < me.beforeSendActions.length; i++) {
             var bsa = me.beforeSendActions[i];
             bsa(httpRequestOpts, tag);
         }
-        
+
         var httpReq = new HttpRequest(me, httpRequestOpts);
-        
+
         me.dbg("URL: " + httpRequestOpts.url, "HttpRequestOptions");
         me.dbg("Method: " + httpRequestOpts.method, "HttpRequestOptions");
 
         for (var rp in routeParams) {
             me.dbg("RouteParameter[" + rp + "]: " + routeParams[rp], "HttpRequestOptions");
         }
-        
+
         if (!TypeUtils.isNullOrUndefined(urlParams)) {
             for (var up in urlParams) {
                 me.dbg("UrlParameter[" + up + "]: " + urlParams[up], "HttpRequestOptions");
             }
         }
 
-        var getLogTag = function() : string {
+        var getLogTag = function (): string {
             return "HttpRequest::" + httpRequestOpts.url;
         };
-        
-        var invokeComplete = function(result: ApiClientResult, err: ApiClientError) {
+
+        var invokeComplete = function (result: ApiClientResult, err: ApiClientError) {
             if (!TypeUtils.isNullOrUndefined(result)) {
                 result.setContext(ApiClientResultContext.Complete);
             }
-            
+
             if (!TypeUtils.isNullOrUndefined(me.completeAction)) {
                 me.completeAction(new ApiClientCompleteContext(me, httpReq,
-                                                               result, err,
-                                                               tag));
+                    result, err,
+                    tag));
             }
         };
 
         try {
             HTTP.request(httpRequestOpts)
                 .then(function (response) {
-                          var result = new ApiClientResult(me, httpReq, response,
-                                                           tag);
-                          result.setContext(ApiClientResultContext.Success);
+                    var result = new ApiClientResult(me, httpReq, response,
+                        tag);
+                    result.setContext(ApiClientResultContext.Success);
 
-                          me.dbg("Status code: " + result.code, getLogTag());
+                    me.dbg("Status code: " + result.code, getLogTag());
 
-                          for (var h in getOwnProperties(result.headers)) {
-                              me.trace("ResponseHeader['" + h + "']: " + result.headers[h], getLogTag());
-                          }
+                    for (var h in getOwnProperties(result.headers)) {
+                        me.trace("ResponseHeader['" + h + "']: " + result.headers[h], getLogTag());
+                    }
 
-                          // collect "conditional" actions that should be
-                          // invoked instead of "success" action
-                          var ifActions = [];
-                          for (var i = 0; i < me.ifEntries.length; i++) {
-                              var ie = me.ifEntries[i];
-                            
-                              if (!TypeUtils.isNullOrUndefined(ie.action)) {
-                                  var statusPredicate = ie.predicate;
-                                  if (TypeUtils.isNullOrUndefined(statusPredicate)) {
-                                      statusPredicate = () => true;
-                                  }
-                                
-                                  if (statusPredicate(result)) {
-                                      ifActions.push(ie.action);
-                                  }
-                              }
-                          }
-                        
-                          // process "conditional" actions
-                          for (var i = 0; i < ifActions.length; i++) {
-                              var ia = ifActions[i];
-                              ia(result);
-                          }
+                    // collect "conditional" actions that should be
+                    // invoked instead of "success" action
+                    var ifActions = [];
+                    for (var i = 0; i < me.ifEntries.length; i++) {
+                        var ie = me.ifEntries[i];
 
-                          if (ifActions.length < 1 &&
-                              !TypeUtils.isNullOrUndefined(me.successAction)) {
-                            
-                              me.successAction(result);
-                          }
-                        
-                          invokeComplete(result, undefined);
-                      },
-                      function (err) {
-                          me.err("[ERROR]: " + err, getLogTag());
-                          
-                          var errCtx = new ApiClientError(me, httpReq,
-                                                          err, ApiClientErrorContext.ClientError,
-                                                          tag);
-                        
-                          if (!TypeUtils.isNullOrUndefined(me.errorAction)) {
-                              errCtx.handled = true;
-                              me.errorAction(errCtx);
-                          }
-                        
-                          if (!errCtx.handled) {
-                              throw err;
-                          }
-                          
-                          invokeComplete(undefined, errCtx);
-                      });
+                        if (!TypeUtils.isNullOrUndefined(ie.action)) {
+                            var statusPredicate = ie.predicate;
+                            if (TypeUtils.isNullOrUndefined(statusPredicate)) {
+                                statusPredicate = () => true;
+                            }
+
+                            if (statusPredicate(result)) {
+                                ifActions.push(ie.action);
+                            }
+                        }
+                    }
+
+                    // process "conditional" actions
+                    for (var i = 0; i < ifActions.length; i++) {
+                        var ia = ifActions[i];
+                        ia(result);
+                    }
+
+                    if (ifActions.length < 1 &&
+                        !TypeUtils.isNullOrUndefined(me.successAction)) {
+
+                        me.successAction(result);
+                    }
+
+                    invokeComplete(result, undefined);
+                },
+                function (err) {
+                    me.err("[ERROR]: " + err, getLogTag());
+
+                    var errCtx = new ApiClientError(me, httpReq,
+                        err, ApiClientErrorContext.ClientError,
+                        tag);
+
+                    if (!TypeUtils.isNullOrUndefined(me.errorAction)) {
+                        errCtx.handled = true;
+                        me.errorAction(errCtx);
+                    }
+
+                    if (!errCtx.handled) {
+                        throw err;
+                    }
+
+                    invokeComplete(undefined, errCtx);
+                });
         }
         catch (e) {
             me.crit("[FATAL ERROR]: " + e, getLogTag());
-            
+
             var errCtx = new ApiClientError(me, httpReq,
-                                            e, ApiClientErrorContext.Exception,
-                                            tag);
-            
+                e, ApiClientErrorContext.Exception,
+                tag);
+
             if (!TypeUtils.isNullOrUndefined(me.errorAction)) {
                 errCtx.handled = true;
-                me.errorAction(errCtx);     
+                me.errorAction(errCtx);
             }
-            
+
             if (!errCtx.handled) {
                 throw e;
             }
-            
+
             invokeComplete(undefined, errCtx);
         }
     }
-    
+
     public route: string;
-    
+
     public routeParams: any;
-    
-    public setAuthorizer(newAuthorizer: IAuthorizer) : ApiClient {
+
+    public setAuthorizer(newAuthorizer: IAuthorizer): ApiClient {
         this.authorizer = newAuthorizer;
         return this;
     }
-    
-    public serverError(serverErrAction : (result : IApiClientResult) => void): ApiClient {
+
+    public serverError(serverErrAction: (result: IApiClientResult) => void): ApiClient {
         return this.ifStatus((code) => code >= 500 && code <= 599,
-                             serverErrAction);
+            serverErrAction);
     }
 
-    public serviceUnavailable(unavailableAction : (result : IApiClientResult) => void) : ApiClient {
+    public serviceUnavailable(unavailableAction: (result: IApiClientResult) => void): ApiClient {
         return this.status(503, unavailableAction);
     }
-    
-    public setBaseUrl(newValue: string) : ApiClient {
+
+    public setBaseUrl(newValue: string): ApiClient {
         this.baseUrl = newValue;
         return this;
     }
-    
-    public setRoute(newValue : string) : ApiClient {
+
+    public setRoute(newValue: string): ApiClient {
         this.route = newValue;
         return this;
     }
-    
-    public status(code: number, statusAction : (result : IApiClientResult) => void) : ApiClient {
+
+    public status(code: number, statusAction: (result: IApiClientResult) => void): ApiClient {
         this.ifStatus((sc) => code == sc,
-                      statusAction);
+            statusAction);
         return this;
     }
 
-    public succeededRequest(succeededAction : (result : IApiClientResult) => void): ApiClient {
+    public succeededRequest(succeededAction: (result: IApiClientResult) => void): ApiClient {
         return this.ifStatus((code) => code >= 200 && code <= 299,
-                             succeededAction);
+            succeededAction);
     }
 
-    public success(successAction: (result : IApiClientResult) => void) : ApiClient {
+    public success(successAction: (result: IApiClientResult) => void): ApiClient {
         this.successAction = successAction;
         return this;
     }
-    
-    public successAction: (ctx : IApiClientResult) => void;
-    
-    public tooManyRequests(tooManyAction : (result : IApiClientResult) => void) : ApiClient {
+
+    public successAction: (ctx: IApiClientResult) => void;
+
+    public tooManyRequests(tooManyAction: (result: IApiClientResult) => void): ApiClient {
         return this.status(429, tooManyAction);
     }
-    
-    public unauthorized(unauthorizedAction : (result : IApiClientResult) => void) : ApiClient {
+
+    public unauthorized(unauthorizedAction: (result: IApiClientResult) => void): ApiClient {
         return this.status(401, unauthorizedAction);
     }
-    
-    public unsupportedMediaType(unsupportedAction : (result : IApiClientResult) => void) : ApiClient {
+
+    public unsupportedMediaType(unsupportedAction: (result: IApiClientResult) => void): ApiClient {
         return this.status(415, unsupportedAction);
     }
-    
-    public uriTooLong(tooLongAction : (result : IApiClientResult) => void) : ApiClient {
+
+    public uriTooLong(tooLongAction: (result: IApiClientResult) => void): ApiClient {
         return this.status(414, tooLongAction);
     }
 }
 
-class ApiClientCompleteContext extends LoggerBase implements IApiClientCompleteContext {    
+class ApiClientCompleteContext extends LoggerBase implements IApiClientCompleteContext {
     private _client: ApiClient;
     private _error: ApiClientError;
     private _request: HttpRequest;
     private _result: ApiClientResult;
     private _tag: any;
-    
+
     constructor(client: ApiClient, request: HttpRequest, result: ApiClientResult, err: ApiClientError,
-                tag: any) {
-                    
+        tag: any) {
+
         super();
-        
+
         this._client = client;
         this._request = request;
         this._result = result;
         this._error = err;
         this._tag = tag;
     }
-    
-    public get client() : ApiClient {
+
+    public get client(): ApiClient {
         return this._client;
     }
-    
+
     protected createLogMessage(msg: any, tag: string,
-                               category : LogCategory, priority : LogPriority) : ILogMessage {
-        
+        category: LogCategory, priority: LogPriority): ILogMessage {
+
         return new LogMessage(LogSource.Complete,
-                              new Date(),
-                              msg, tag,
-                              category, priority);
+            new Date(),
+            msg, tag,
+            category, priority);
     }
-    
+
     public get error(): ApiClientError {
         return this._error;
     }
-    
+
     protected onLog(msg: ILogMessage) {
         invokeLogActions(this._client, msg);
     }
-    
+
     public get request(): HttpRequest {
         return this._request;
     }
-    
+
     public get result(): ApiClientResult {
         return this._result;
     }
-    
+
     public get tag(): any {
         return this._tag;
     }
@@ -925,50 +924,50 @@ class ApiClientError extends LoggerBase implements IApiClientError {
     private _error: any;
     private _request: HttpRequest;
     private _tag: any;
-    
-    constructor(client : ApiClient, request: HttpRequest, error: any, ctx: ApiClientErrorContext,
-                tag: any) {
+
+    constructor(client: ApiClient, request: HttpRequest, error: any, ctx: ApiClientErrorContext,
+        tag: any) {
         super();
-        
+
         this._client = client;
         this._request = request;
         this._error = error;
         this._context = ctx;
         this._tag = tag;
     }
-    
+
     public get client(): IApiClient {
         return this._client;
     }
-    
-    public get context() : ApiClientErrorContext {
+
+    public get context(): ApiClientErrorContext {
         return this._context;
     }
-    
+
     protected createLogMessage(msg: any, tag: string,
-                               category : LogCategory, priority : LogPriority) : ILogMessage {
-        
+        category: LogCategory, priority: LogPriority): ILogMessage {
+
         return new LogMessage(LogSource.Error,
-                              new Date(),
-                              msg, tag,
-                              category, priority);
+            new Date(),
+            msg, tag,
+            category, priority);
     }
-    
-    public get error() : any {
+
+    public get error(): any {
         return this._error;
     }
-    
+
     public handled: boolean = false;
-    
-    protected onLog(msg : ILogMessage) {
+
+    protected onLog(msg: ILogMessage) {
         invokeLogActions(this._client, msg);
     }
-    
-    public get request() : HttpRequest {
+
+    public get request(): HttpRequest {
         return this._request;
     }
-    
-    public get tag() : any {
+
+    public get tag(): any {
         return this._tag;
     }
 }
@@ -981,7 +980,7 @@ export enum ApiClientResultContext {
      * "success" action.
      */
     Success,
-    
+
     /**
      * "completed" action.
      */
@@ -996,7 +995,7 @@ export enum ApiClientErrorContext {
      * Error in HTTP client.
      */
     ClientError,
-    
+
     /**
      * "Unhandled" exception.
      */
@@ -1009,103 +1008,103 @@ class ApiClientResult extends LoggerBase implements IApiClientResult {
     private _reponse: HTTP.HttpResponse;
     private _request: HttpRequest;
     private _tag: any;
-    
-    constructor(client : ApiClient, request: HttpRequest, response: HTTP.HttpResponse,
-                tag: any) {
+
+    constructor(client: ApiClient, request: HttpRequest, response: HTTP.HttpResponse,
+        tag: any) {
         super();
-        
+
         this._client = client;
         this._request = request;
         this._reponse = response;
         this._tag = tag;
     }
-    
-    public get client() : ApiClient {
+
+    public get client(): ApiClient {
         return this._client;
     }
-    
+
     public get code(): number {
         return this._reponse.statusCode;
     }
-    
-    public get content() : any {
+
+    public get content(): any {
         if (TypeUtils.isNullOrUndefined(this._reponse.content.raw)) {
             return null;
         }
-        
+
         return this._reponse.content.raw;
     }
-    
-    public get context() : ApiClientResultContext {
+
+    public get context(): ApiClientResultContext {
         return this._context;
     }
-    
+
     protected createLogMessage(msg: any, tag: string,
-                               category : LogCategory, priority : LogPriority) : ILogMessage {
-        
+        category: LogCategory, priority: LogPriority): ILogMessage {
+
         return new LogMessage(LogSource.Result,
-                              new Date(),
-                              msg, tag,
-                              category, priority);
+            new Date(),
+            msg, tag,
+            category, priority);
     }
 
-    public getAjaxResult<TData>() : IAjaxResult<TData> {
+    public getAjaxResult<TData>(): IAjaxResult<TData> {
         return this.getJSON<IAjaxResult<TData>>();
     }
-    
-    public getFile(destFile?: string) : FileSystem.File {
+
+    public getFile(destFile?: string): FileSystem.File {
         if (arguments.length < 1) {
             return this._reponse.content.toFile();
         }
-        
+
         this._reponse.headers
-        
+
         return this._reponse.content.toFile(destFile);
     }
-    
+
     public getImage(): Promise<Image.ImageSource> {
         return this._reponse.content.toImage();
     }
-    
-    public getJSON<T>() : T {
+
+    public getJSON<T>(): T {
         var json = this._reponse.content.toString();
         if (isEmptyString(json)) {
             return null;
         }
-        
+
         return JSON.parse(json);
     }
-    
-    public getString() : string {
+
+    public getString(): string {
         var str = this._reponse.content.toString();
         if (TypeUtils.isNullOrUndefined(str)) {
             return null;
         }
-        
+
         return str;
     }
-    
+
     public get headers(): HTTP.Headers {
         return this._reponse.headers;
     }
-    
-    protected onLog(msg : ILogMessage) {
+
+    protected onLog(msg: ILogMessage) {
         invokeLogActions(this._client, msg);
     }
-    
-    public get request() : HttpRequest {
+
+    public get request(): HttpRequest {
         return this._request;
     }
-    
-    public get response() : HTTP.HttpResponse {
+
+    public get response(): HTTP.HttpResponse {
         return this._reponse;
     }
-    
-    public setContext(newValue : ApiClientResultContext) {
+
+    public setContext(newValue: ApiClientResultContext) {
         this._context = newValue;
     }
-    
-    public get tag() : any {
+
+    public get tag(): any {
         return this._tag;
     }
 }
@@ -1114,40 +1113,40 @@ class ApiClientResult extends LoggerBase implements IApiClientResult {
  * An authorizer for basic authentication.
  */
 export class BasicAuth implements IAuthorizer {
-    private _password : string;
-    private _username : string;
-    
+    private _password: string;
+    private _username: string;
+
     /**
      * Initializes a new instance of that class.
      * 
      * @param {String} username The username.
      * @param {String} pwd The password.
      */
-    constructor(username : string, pwd : string) {
+    constructor(username: string, pwd: string) {
         this._username = username;
         this._password = pwd;
     }
-    
+
     /**
      * Gets the password.
      * 
      * @property
      */
-    public get password() : string {
+    public get password(): string {
         return this._password;
     }
-    
+
     /** @inheritdoc */
-    public prepare(reqOpts : HTTP.HttpRequestOptions) {
+    public prepare(reqOpts: HTTP.HttpRequestOptions) {
         reqOpts.headers["Authorization"] = "Basic " + encodeBase64(this._username + ":" + this._password);
     }
-    
+
     /**
      * Gets the username.
      * 
      * @property
      */
-    public get username() : string {
+    public get username(): string {
         return this._username;
     }
 }
@@ -1156,28 +1155,28 @@ export class BasicAuth implements IAuthorizer {
  * An authorizer for bearer authentication.
  */
 export class BearerAuth implements IAuthorizer {
-    private _token : string;
-    
+    private _token: string;
+
     /**
      * Initializes a new instance of that class.
      * 
      * @param {String} token The token.
      */
-    constructor(token : string) {
+    constructor(token: string) {
         this._token = token;
     }
-    
+
     /** @inheritdoc */
-    public prepare(reqOpts : HTTP.HttpRequestOptions) {
+    public prepare(reqOpts: HTTP.HttpRequestOptions) {
         reqOpts.headers["Authorization"] = "Bearer " + this._token;
     }
-    
+
     /**
      * Gets the token.
      * 
      * @property
      */
-    public get token() : string {
+    public get token(): string {
         return this._token;
     }
 }
@@ -1185,18 +1184,18 @@ export class BearerAuth implements IAuthorizer {
 class FormatProviderContext implements IFormatProviderContext {
     private _expression: string;
     private _value: any;
-    
+
     constructor(expr: string, val: any) {
         this._expression = expr;
         this._value = val;
     }
-    
+
     public get expression(): string {
         return this._expression;
     }
-    
+
     public handled: boolean = false;
-    
+
     public get value(): any {
         return this._value;
     }
@@ -1207,9 +1206,9 @@ class FormatProviderContext implements IFormatProviderContext {
  */
 export enum HttpMethod {
     GET,
-    POST, 
+    POST,
     PUT,
-    PATCH,   
+    PATCH,
     DELETE,
     HEAD,
     TRACE,
@@ -1220,28 +1219,28 @@ export enum HttpMethod {
 class HttpRequest implements IHttpRequest {
     private _client: ApiClient;
     private _opts: HTTP.HttpRequestOptions;
-    
-    constructor(client: ApiClient, reqOpts : HTTP.HttpRequestOptions) {
+
+    constructor(client: ApiClient, reqOpts: HTTP.HttpRequestOptions) {
         this._client = client;
         this._opts = reqOpts;
     }
-    
-    public get body() : any {
+
+    public get body(): any {
         return this._opts.content;
     }
-    
-    public get client() : ApiClient {
+
+    public get client(): ApiClient {
         return this._client;
     }
-    
+
     public get headers(): any {
         return this._opts.headers;
     }
-    
+
     public get method(): string {
         return this._opts.method;
     }
-    
+
     public get url(): string {
         return this._opts.url;
     }
@@ -1255,17 +1254,17 @@ export enum HttpRequestType {
      * Raw / binary
      */
     Binary,
-    
+
     /**
      * JSON
      */
     JSON,
-    
+
     /**
      * Xml
      */
     Xml,
-    
+
     /**
      * Text / string
      */
@@ -1329,15 +1328,15 @@ export interface IAjaxResult<TData> {
      * 
      * @property
      */
-    code? : number;
-    
+    code?: number;
+
     /**
      * Gets the message (if defined).
      * 
      * @property
      */
     msg?: string;
-    
+
     /**
      * The result data (if defined).
      * 
@@ -1357,8 +1356,8 @@ export interface IApiClient {
      * 
      * @param {Function} provider The callback that formats values.
      */
-    addFormatProvider(provider: (ctx: IFormatProviderContext) => any) : IApiClient;
-    
+    addFormatProvider(provider: (ctx: IFormatProviderContext) => any): IApiClient;
+
     /**
      * Adds a log action.
      * 
@@ -1366,13 +1365,13 @@ export interface IApiClient {
      * 
      * @param {Function} logAction The log action.
      */
-    addLogger(logAction : (ctx : ILogMessage) => void) : IApiClient;
-    
+    addLogger(logAction: (ctx: ILogMessage) => void): IApiClient;
+
     /**
      * Gets or sets the deault authorizer.
      */
     authorizer: IAuthorizer;
-    
+
     /**
      * Short hand method to define an action that is invoked
      * for a status code 502 (bad gateway).
@@ -1381,8 +1380,8 @@ export interface IApiClient {
      * 
      * @param {Function} badGatewayAction The action to invoke.
      */
-    badGateway(badGatewayAction : (result : IApiClientResult) => void) : IApiClient;
-    
+    badGateway(badGatewayAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Short hand method to define an action that is invoked
      * for a status code 400 (bad request).
@@ -1391,13 +1390,13 @@ export interface IApiClient {
      * 
      * @param {Function} notFoundAction The action to invoke.
      */
-    badRequest(badRequestAction : (result : IApiClientResult) => void) : IApiClient;
-    
+    badRequest(badRequestAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Gets or sets the base URL.
      */
-    baseUrl : string;
-    
+    baseUrl: string;
+
     /**
      * Defines an action that is invoked BEFORE a request starts.
      * 
@@ -1405,8 +1404,8 @@ export interface IApiClient {
      * 
      * @param {Function} beforeAction The action to invoke.
      */
-    beforeSend(beforeAction : (opts : HTTP.HttpRequestOptions, tag: any) => void) : IApiClient;
-    
+    beforeSend(beforeAction: (opts: HTTP.HttpRequestOptions, tag: any) => void): IApiClient;
+
     /**
      * Defines an action that is invoked on a status code between 400 and 499.
      * 
@@ -1414,8 +1413,8 @@ export interface IApiClient {
      * 
      * @param {Function} clientErrAction The action to invoke.
      */
-    clientError(clientErrAction : (result : IApiClientResult) => void): IApiClient;
-    
+    clientError(clientErrAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Defines an action that is invoked on a status code between 400 and 599.
      * 
@@ -1423,8 +1422,8 @@ export interface IApiClient {
      * 
      * @param {Function} clientSrvErrAction The action to invoke.
      */
-    clientOrServerError(clientSrvErrAction : (result : IApiClientResult) => void): IApiClient;
-    
+    clientOrServerError(clientSrvErrAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Defines the "complete" action.
      * 
@@ -1432,7 +1431,7 @@ export interface IApiClient {
      * 
      * @param {Function} completeAction The action to invoke.
      */
-    complete(completeAction : (ctx : IApiClientCompleteContext) => void) : IApiClient;
+    complete(completeAction: (ctx: IApiClientCompleteContext) => void): IApiClient;
 
     /**
      * Short hand method to define an action that is invoked
@@ -1442,15 +1441,15 @@ export interface IApiClient {
      * 
      * @param {Function} conflictAction The action to invoke.
      */
-    conflict(conflictAction : (result : IApiClientResult) => void) : IApiClient;
-    
+    conflict(conflictAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Starts a DELETE request.
      * 
      * @param {IRequestOptions} [opts] The (additional) options.
      */
-    delete(opts? : IRequestOptions);
-    
+    delete(opts?: IRequestOptions);
+
     /**
      * Defines the "error" action.
      * 
@@ -1458,8 +1457,8 @@ export interface IApiClient {
      * 
      * @param {Function} errAction The action to invoke.
      */
-    error(errAction : (ctx : IApiClientError) => void) : IApiClient;
-    
+    error(errAction: (ctx: IApiClientError) => void): IApiClient;
+
     /**
      * Short hand method to define an action that is invoked
      * for a status code 403 (forbidden).
@@ -1468,8 +1467,8 @@ export interface IApiClient {
      * 
      * @param {Function} forbiddenAction The action to invoke.
      */
-    forbidden(forbiddenAction : (result : IApiClientResult) => void) : IApiClient;
-    
+    forbidden(forbiddenAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Short hand method to define an action that is invoked
      * for a status code 504 (gateway timeout).
@@ -1478,15 +1477,15 @@ export interface IApiClient {
      * 
      * @param {Function} timeoutAction The action to invoke.
      */
-    gatewayTimeout(timeoutAction: (result : IApiClientResult) => void) : IApiClient;
-    
+    gatewayTimeout(timeoutAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Starts a GET request.
      * 
      * @param {IRequestOptions} [opts] The (additional) options.
      */
-    get(opts? : IRequestOptions);
-    
+    get(opts?: IRequestOptions);
+
     /**
      * Short hand method to define an action that is invoked
      * for a status code 410 (gone).
@@ -1495,15 +1494,15 @@ export interface IApiClient {
      * 
      * @param {Function} goneAction The action to invoke.
      */
-    gone(goneAction : (result : IApiClientResult) => void) : IApiClient;
-    
+    gone(goneAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Gets or sets the global request headers.
      * 
      * @property
      */
     headers: any;
-    
+
     /**
      * Invokes an action if a predicate matches.
      * 
@@ -1512,9 +1511,9 @@ export interface IApiClient {
      * @param {Function} predicate The predicate to use.
      * @param {Function} statusAction The action to invoke.
      */
-    if(predicate: (ctx : IApiClientResult) => boolean,
-       statusAction : (result : IApiClientResult) => void) : IApiClient;
-    
+    if(predicate: (ctx: IApiClientResult) => boolean,
+        statusAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Invokes an action if a status matches.
      * 
@@ -1523,9 +1522,9 @@ export interface IApiClient {
      * @param {Function} predicate The predicate to use.
      * @param {Function} statusAction The action to invoke.
      */
-    ifStatus(predicate: (code : number) => boolean,
-             statusAction : (result : IApiClientResult) => void) : IApiClient;
-    
+    ifStatus(predicate: (code: number) => boolean,
+        statusAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Defines an action that is invoked on a status code between 100 and 199.
      * 
@@ -1533,8 +1532,8 @@ export interface IApiClient {
      * 
      * @param {Function} infoAction The action to invoke.
      */
-    informational(infoAction: (result : IApiClientResult) => void) : IApiClient;
-    
+    informational(infoAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Short hand method to define an action that is invoked
      * for a status code 507 (insufficient storage).
@@ -1543,8 +1542,8 @@ export interface IApiClient {
      * 
      * @param {Function} insufficientAction The action to invoke.
      */
-    insufficientStorage(insufficientAction : (result : IApiClientResult) => void) : IApiClient;
-    
+    insufficientStorage(insufficientAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Short hand method to define an action that is invoked
      * for a status code 500 (internal server error).
@@ -1553,8 +1552,8 @@ export interface IApiClient {
      * 
      * @param {Function} errAction The action to invoke.
      */
-    internalServerError(errAction : (result : IApiClientResult) => void) : IApiClient;
-    
+    internalServerError(errAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Short hand method to define an action that is invoked
      * for a status code 423 (document not found).
@@ -1563,8 +1562,8 @@ export interface IApiClient {
      * 
      * @param {Function} lockedAction The action to invoke.
      */
-    locked(lockedAction : (result : IApiClientResult) => void) : IApiClient;
-    
+    locked(lockedAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Short hand method to define an action that is invoked
      * for a status code 405 (method not allowed).
@@ -1573,8 +1572,8 @@ export interface IApiClient {
      * 
      * @param {Function} notAllowedAction The action to invoke.
      */
-    methodNotAllowed(notAllowedAction : (result : IApiClientResult) => void) : IApiClient;
-    
+    methodNotAllowed(notAllowedAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Short hand method to define an action that is invoked
      * for a status code 404 (document not found).
@@ -1583,8 +1582,8 @@ export interface IApiClient {
      * 
      * @param {Function} notFoundAction The action to invoke.
      */
-    notFound(notFoundAction : (result : IApiClientResult) => void) : IApiClient;
-    
+    notFound(notFoundAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Short hand method to define an action that is invoked
      * for a status code 501 (not implemented).
@@ -1593,8 +1592,8 @@ export interface IApiClient {
      * 
      * @param {Function} notImplementedAction The action to invoke.
      */
-    notImplemented(notImplementedAction : (result : IApiClientResult) => void) : IApiClient;
-    
+    notImplemented(notImplementedAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Short hand method to define an action that is invoked
      * for a status code 200, 204 or 205 (OK; no content; reset content).
@@ -1603,8 +1602,8 @@ export interface IApiClient {
      * 
      * @param {Function} okAction The action to invoke.
      */
-    ok(okAction: (result : IApiClientResult) => void) : IApiClient;
-    
+    ok(okAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Short hand method to define an action that is invoked
      * for a status code 413 (payload too large).
@@ -1613,15 +1612,15 @@ export interface IApiClient {
      * 
      * @param {Function} tooLargeAction The action to invoke.
      */
-    payloadTooLarge(tooLargeAction: (result : IApiClientResult) => void) : IApiClient;
-    
+    payloadTooLarge(tooLargeAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Gets or sets the global list of URL parameters.
      * 
      * @property
      */
     params: any;
-    
+
     /**
      * Short hand method to define an action that is invoked
      * for a status code 206 (partial content).
@@ -1630,29 +1629,29 @@ export interface IApiClient {
      * 
      * @param {Function} partialAction The action to invoke.
      */
-    partialContent(partialAction: (result : IApiClientResult) => void) : IApiClient;
-    
+    partialContent(partialAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Starts a PATCH request.
      * 
      * @param {IRequestOptions} [opts] The (additional) options.
      */
-    patch(opts? : IRequestOptions);
-    
+    patch(opts?: IRequestOptions);
+
     /**
      * Starts a POST request.
      * 
      * @param {IRequestOptions} [opts] The (additional) options.
      */
-    post(opts? : IRequestOptions);
-    
+    post(opts?: IRequestOptions);
+
     /**
      * Starts a PUT request.
      * 
      * @param {IRequestOptions} [opts] The (additional) options.
      */
-    put(opts? : IRequestOptions);
-    
+    put(opts?: IRequestOptions);
+
     /**
      * Defines an action that is invoked on a status code between 300 and 399.
      * 
@@ -1660,28 +1659,28 @@ export interface IApiClient {
      * 
      * @param {Function} redirectAction The action to invoke.
      */
-    redirection(redirectAction : (result : IApiClientResult) => void): IApiClient;
-    
+    redirection(redirectAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Starts a request.
      * 
      * @param any method The HTTP method.
      * @param {IRequestOptions} [opts] The (additional) options.
      */
-    request(method : any, opts? : IRequestOptions);
-    
+    request(method: any, opts?: IRequestOptions);
+
     /**
      * Gets or sets the route.
      */
     route: string;
-    
+
     /**
      * Gets or sets the global list of route parameters.
      * 
      * @property
      */
     routeParams: any;
-    
+
     /**
      * Defines an action that is invoked on a status code between 500 and 599.
      * 
@@ -1689,8 +1688,8 @@ export interface IApiClient {
      * 
      * @param {Function} serverErrAction The action to invoke.
      */
-    serverError(serverErrAction : (result : IApiClientResult) => void): IApiClient;
-    
+    serverError(serverErrAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Short hand method to define an action that is invoked
      * for a status code 503 (service unavailable).
@@ -1699,8 +1698,8 @@ export interface IApiClient {
      * 
      * @param {Function} unavailableAction The action to invoke.
      */
-    serviceUnavailable(unavailableAction : (result : IApiClientResult) => void) : IApiClient;
-    
+    serviceUnavailable(unavailableAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Sets the default authorizer.
      * 
@@ -1708,17 +1707,17 @@ export interface IApiClient {
      * 
      * @param {IAuthorizer} authorizer The default authorizer.
      */
-    setAuthorizer(authorizer: IAuthorizer) : IApiClient;
-    
+    setAuthorizer(authorizer: IAuthorizer): IApiClient;
+
     /**
      * Sets the base URL.
      * 
      * @chainable
      * 
      * @param {String} newValue The new URL.
-     */        
-    setBaseUrl(newValue : string) : IApiClient;
-    
+     */
+    setBaseUrl(newValue: string): IApiClient;
+
     /**
      * Sets the route.
      * 
@@ -1726,8 +1725,8 @@ export interface IApiClient {
      * 
      * @param {String} newValue The new route.
      */
-    setRoute(newValue : string) : IApiClient;
-    
+    setRoute(newValue: string): IApiClient;
+
     /**
      * Defines an action that is invoked for a specific status code.
      * 
@@ -1737,8 +1736,8 @@ export interface IApiClient {
      * @param {Function} statusAction The action to invoke.
      */
     status(code: number,
-           statusAction : (result : IApiClientResult) => void) : IApiClient;
-    
+        statusAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Defines an action that is invoked on a status code between 200 and 299.
      * 
@@ -1746,8 +1745,8 @@ export interface IApiClient {
      * 
      * @param {Function} succeededAction The action to invoke.
      */
-    succeededRequest(succeededAction : (result : IApiClientResult) => void): IApiClient;
-    
+    succeededRequest(succeededAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Defines the "success" action.
      * 
@@ -1755,8 +1754,8 @@ export interface IApiClient {
      * 
      * @param {Function} successAction The action to invoke.
      */
-    success(successAction : (result: IApiClientResult) => void) : IApiClient;
-    
+    success(successAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Short hand method to define an action that is invoked
      * for a status code 429 (too many requests).
@@ -1765,8 +1764,8 @@ export interface IApiClient {
      * 
      * @param {Function} tooManyAction The action to invoke.
      */
-    tooManyRequests(tooManyAction : (result : IApiClientResult) => void) : IApiClient;
-    
+    tooManyRequests(tooManyAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Short hand method to define an action that is invoked
      * for a status code 401 (unauthorized).
@@ -1775,8 +1774,8 @@ export interface IApiClient {
      * 
      * @param {Function} unauthorizedAction The action to invoke.
      */
-    unauthorized(unauthorizedAction : (result : IApiClientResult) => void) : IApiClient;
-    
+    unauthorized(unauthorizedAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Short hand method to define an action that is invoked
      * for a status code 415 (unsupported media type).
@@ -1785,8 +1784,8 @@ export interface IApiClient {
      * 
      * @param {Function} unsupportedAction The action to invoke.
      */
-    unsupportedMediaType(unsupportedAction : (result : IApiClientResult) => void) : IApiClient;
-    
+    unsupportedMediaType(unsupportedAction: (result: IApiClientResult) => void): IApiClient;
+
     /**
      * Short hand method to define an action that is invoked
      * for a status code 414 (URI too long).
@@ -1795,7 +1794,7 @@ export interface IApiClient {
      * 
      * @param {Function} tooLongAction The action to invoke.
      */
-    uriTooLong(tooLongAction : (result : IApiClientResult) => void) : IApiClient;
+    uriTooLong(tooLongAction: (result: IApiClientResult) => void): IApiClient;
 }
 
 /**
@@ -1808,21 +1807,21 @@ export interface IApiClientCompleteContext extends ILogger, ITagProvider {
      * @property
      */
     client: IApiClient;
-    
+
     /**
      * Gets the error context (if defined).
      * 
      * @property
      */
     error?: IApiClientError;
-    
+
     /**
      * Gets the underlying HTTP request.
      * 
      * @property
      */
     request: IHttpRequest;
-    
+
     /**
      * Gets the API result (if defined).
      * 
@@ -1841,135 +1840,135 @@ export interface IApiClientConfig {
      * @property
      */
     authorizer?: IAuthorizer;
-    
+
     /**
      * Gets the base URL to use.
      * 
      * @property
      */
     baseUrl: string;
-    
+
     /**
      * Defines an action that is invoked BEFORE a request starts.
      * 
      * @property
      */
-    beforeSend? : (opts : HTTP.HttpRequestOptions) => void;
-    
+    beforeSend?: (opts: HTTP.HttpRequestOptions) => void;
+
     /**
      * Defines the action to handle a status code between 400 and 499.
      * 
      * @property
      */
-    clientError?: (ctx : IApiClientResult) => void;
-    
+    clientError?: (ctx: IApiClientResult) => void;
+
     /**
      * Defines the "complete" action.
      * 
      * @property
      */
-    complete?: (ctx : IApiClientCompleteContext) => void;
-    
+    complete?: (ctx: IApiClientCompleteContext) => void;
+
     /**
      * Defines the "error" action.
      * 
      * @property
      */
-    error?: (ctx : IApiClientError) => void;
-    
+    error?: (ctx: IApiClientError) => void;
+
     /**
      * Defines the action to handle a 403 status code.
      * 
      * @property
      */
-    forbidden?: (ctx : IApiClientResult) => void;
-    
+    forbidden?: (ctx: IApiClientResult) => void;
+
     /**
      * Gets the global request headers to use.
      * 
      * @property
      */
     headers?: any;
-    
+
     /**
      * Defines that actions to invoke if a reponse matches.
      */
-    if? : IIfResponse[];
-    
+    if?: IIfResponse[];
+
     /**
      * Defines that actions to invoke if a status code matches.
      */
-    ifStatus? : IIfStatus[];
-    
+    ifStatus?: IIfStatus[];
+
     /**
      * Defines the action to handle a status code between 300 and 399.
      * 
      * @property
      */
-    redirection?: (ctx : IApiClientResult) => void;
-    
+    redirection?: (ctx: IApiClientResult) => void;
+
     /**
      * Defines the action to handle a 404 status code.
      * 
      * @property
      */
-    notFound?: (ctx : IApiClientResult) => void;
-    
+    notFound?: (ctx: IApiClientResult) => void;
+
     /**
      * Defines the action to handle a 200, 204 or 205 status code.
      * 
      * @property
      */
-    ok?: (ctx : IApiClientResult) => void;
-    
+    ok?: (ctx: IApiClientResult) => void;
+
     /**
      * Gets the global URL parameters to use.
      * 
      * @property
      */
     params?: any;
-    
+
     /**
      * Gets the optional route.
      * 
      * @property
      */
     route?: string;
-    
+
     /**
      * Gets the global route parameters to use.
      * 
      * @property
      */
     routeParams?: any;
-    
+
     /**
      * Defines the action to handle a status code between 500 and 599.
      * 
      * @property
      */
-    serverError?: (ctx : IApiClientResult) => void;
+    serverError?: (ctx: IApiClientResult) => void;
 
     /**
      * Defines the action to handle a status code between 200 and 299.
      * 
      * @property
      */
-    succeededRequest?: (ctx : IApiClientResult) => void;
-    
+    succeededRequest?: (ctx: IApiClientResult) => void;
+
     /**
      * Defines the "success" action.
      * 
      * @property
      */
-    success?: (ctx : IApiClientResult) => void;
-    
+    success?: (ctx: IApiClientResult) => void;
+
     /**
      * Defines the action to handle a 401 status code.
      * 
      * @property
      */
-    unauthorized?: (ctx : IApiClientResult) => void;
+    unauthorized?: (ctx: IApiClientResult) => void;
 }
 
 /**
@@ -1982,28 +1981,28 @@ export interface IApiClientError extends ILogger, ITagProvider {
      * @property
      */
     client: IApiClient;
-    
+
     /**
      * Gets the context.
      * 
      * @property
      */
     context: ApiClientErrorContext;
-    
+
     /**
      * Gets the error data.
      * 
      * @property
      */
     error: any;
-    
+
     /**
      * Gets or sets if error has been handled or not.
      * 
      * @property
      */
     handled: boolean;
-    
+
     /**
      * Gets the underlying HTTP request.
      * 
@@ -2029,35 +2028,35 @@ export interface IApiClientResult extends ILogger, ITagProvider {
      * @property
      */
     code: number;
-    
+
     /**
      * Gets the raw content.
      * 
      * @property
      */
     content: any;
-    
+
     /**
      * Gets the underlying (execution) context.
      * 
      * @property
      */
     context: ApiClientResultContext;
-    
+
     /**
      * Gets the response headers.
      * 
      * @property
      */
     headers: HTTP.Headers;
-    
+
     /**
      * Returns the content as wrapped AJAX result object.
      * 
      * @return {IAjaxResult<TData>} The ajax result object.
      */
-    getAjaxResult<TData>() : IAjaxResult<TData>;
-    
+    getAjaxResult<TData>(): IAjaxResult<TData>;
+
     /**
      * Returns the content as file.
      * 
@@ -2065,36 +2064,36 @@ export interface IApiClientResult extends ILogger, ITagProvider {
      * 
      * @return {FileSystem.File} The file.
      */
-    getFile(destFile?: string) : FileSystem.File;
-    
+    getFile(destFile?: string): FileSystem.File;
+
     /**
      * Tries result the content as image source.
      * 
      * @return {Promise<Image.ImageSource>} The result.
      */
     getImage(): Promise<Image.ImageSource>;
-    
+
     /**
      * Returns the content as JSON object.
      * 
      * @return {T} The JSON object.
      */
-    getJSON<T>() : T;
-    
+    getJSON<T>(): T;
+
     /**
      * Returns the content as string.
      * 
      * @return {String} The string.
      */
-    getString() : string;
-    
+    getString(): string;
+
     /**
      * Gets the information about the request.
      * 
      * @property
      */
     request: IHttpRequest;
-    
+
     /**
      * Gets the raw response.
      * 
@@ -2125,14 +2124,14 @@ export interface IFormatProviderContext {
      * @property
      */
     expression: string;
-    
+
     /**
      * Gets if the expression has been handled or not.
      * 
      * @property
      */
     handled: boolean;
-    
+
     /**
      * Gets the underlying (unhandled) value.
      * 
@@ -2149,24 +2148,24 @@ export interface IHttpRequest {
      * Gets the raw content that is send to the API.
      */
     body: any;
-    
+
     /**
      * Gets the underlying client.
      * 
      * @property
      */
     client: IApiClient;
-    
+
     /**
      * Gets the list of request headers.
      */
     headers: any;
-    
+
     /**
      * Gets the HTTP method.
      */
     method: string;
-    
+
     /**
      * Gets the URL.
      */
@@ -2183,14 +2182,14 @@ export interface IIfResponse {
      * 
      * @property
      */
-    action : (result : IApiClientResult) => void,
-    
+    action: (result: IApiClientResult) => void,
+
     /**
      * The predicate.
      * 
      * @property
      */
-    predicate?: (ctx : IApiClientResult) => boolean
+    predicate?: (ctx: IApiClientResult) => boolean
 }
 
 /**
@@ -2203,14 +2202,14 @@ export interface IIfStatus {
      * 
      * @property
      */
-    action : (result : IApiClientResult) => void,
-    
+    action: (result: IApiClientResult) => void,
+
     /**
      * The predicate.
      * 
      * @property
      */
-    predicate?: (code : number) => boolean
+    predicate?: (code: number) => boolean
 }
 
 /**
@@ -2223,33 +2222,33 @@ export interface ILogMessage {
      * @property
      */
     category: LogCategory;
-    
+
     /**
      * Gets the message value.
      * 
      * @property
      */
     message: any;
-    
+
     /**
      * Gets the priority.
      * 
      * @property
      */
     priority: LogPriority;
-    
+
     /**
      * Gets the source.
      */
     source: LogSource;
-    
+
     /**
      * Gets the tag.
      * 
      * @property
      */
     tag: string;
-    
+
     /**
      * Gets the timestamp.
      */
@@ -2269,9 +2268,9 @@ export interface ILogger {
      * @param {String} [tag] The optional tag value.
      * @param {LogPriority} [priority] The optional log priority.
      */
-    alert(msg : any, tag?: string,
-          priority?: LogPriority) : ILogger;
-    
+    alert(msg: any, tag?: string,
+        priority?: LogPriority): ILogger;
+
     /**
      * Logs a critical message.
      * 
@@ -2281,9 +2280,9 @@ export interface ILogger {
      * @param {String} [tag] The optional tag value.
      * @param {LogPriority} [priority] The optional log priority.
      */
-    crit(msg : any, tag?: string,
-         priority?: LogPriority) : ILogger;
-    
+    crit(msg: any, tag?: string,
+        priority?: LogPriority): ILogger;
+
     /**
      * Logs a debug message.
      * 
@@ -2293,9 +2292,9 @@ export interface ILogger {
      * @param {String} [tag] The optional tag value.
      * @param {LogPriority} [priority] The optional log priority.
      */
-    dbg(msg : any, tag?: string,
-        priority?: LogPriority) : ILogger;
-    
+    dbg(msg: any, tag?: string,
+        priority?: LogPriority): ILogger;
+
     /**
      * Logs an emergency message.
      * 
@@ -2305,9 +2304,9 @@ export interface ILogger {
      * @param {String} [tag] The optional tag value.
      * @param {LogPriority} [priority] The optional log priority.
      */
-    emerg(msg : any, tag?: string,
-          priority?: LogPriority) : ILogger;
-    
+    emerg(msg: any, tag?: string,
+        priority?: LogPriority): ILogger;
+
     /**
      * Logs an error message.
      * 
@@ -2317,9 +2316,9 @@ export interface ILogger {
      * @param {String} [tag] The optional tag value.
      * @param {LogPriority} [priority] The optional log priority.
      */
-    err(msg : any, tag?: string,
-        priority?: LogPriority) : ILogger;
-    
+    err(msg: any, tag?: string,
+        priority?: LogPriority): ILogger;
+
     /**
      * Logs an info message.
      * 
@@ -2329,9 +2328,9 @@ export interface ILogger {
      * @param {String} [tag] The optional tag value.
      * @param {LogPriority} [priority] The optional log priority.
      */
-    info(msg : any, tag?: string,
-         priority?: LogPriority) : ILogger;
-    
+    info(msg: any, tag?: string,
+        priority?: LogPriority): ILogger;
+
     /**
      * Logs a message.
      * 
@@ -2342,9 +2341,9 @@ export interface ILogger {
      * @param {LogCategory} [category] The optional log category. Default: LogCategory.Debug
      * @param {LogPriority} [priority] The optional log priority.
      */
-    log(msg : any, tag?: string,
-        category?: LogCategory, priority?: LogPriority) : ILogger;
-    
+    log(msg: any, tag?: string,
+        category?: LogCategory, priority?: LogPriority): ILogger;
+
     /**
      * Logs a notice message.
      * 
@@ -2354,9 +2353,9 @@ export interface ILogger {
      * @param {String} [tag] The optional tag value.
      * @param {LogPriority} [priority] The optional log priority.
      */
-    note(msg : any, tag?: string,
-         priority?: LogPriority) : ILogger;
-     
+    note(msg: any, tag?: string,
+        priority?: LogPriority): ILogger;
+
     /**
      * Logs a trace message.
      * 
@@ -2366,9 +2365,9 @@ export interface ILogger {
      * @param {String} [tag] The optional tag value.
      * @param {LogPriority} [priority] The optional log priority.
      */
-    trace(msg : any, tag?: string,
-          priority?: LogPriority) : ILogger;
-        
+    trace(msg: any, tag?: string,
+        priority?: LogPriority): ILogger;
+
     /**
      * Logs a warning message.
      * 
@@ -2378,8 +2377,8 @@ export interface ILogger {
      * @param {String} [tag] The optional tag value.
      * @param {LogPriority} [priority] The optional log priority.
      */
-    warn(msg : any, tag?: string,
-         priority?: LogPriority) : ILogger;
+    warn(msg: any, tag?: string,
+        priority?: LogPriority): ILogger;
 }
 
 /**
@@ -2391,57 +2390,57 @@ export interface IRequestOptions {
      * 
      * @property
      */
-    authorizer? : IAuthorizer;
-    
+    authorizer?: IAuthorizer;
+
     /**
      * Gets the content.
      * 
      * @property
      */
     content?: any;
-    
+
     /**
      * Gets the name of the encoding.
      * 
      * @property
      */
     encoding?: string;
-    
+
     /**
      * Gets the list of request headers.
      * 
      * @property
      */
-    headers? : any;
-    
+    headers?: any;
+
     /**
      * Gets the URL params to set.
      * 
      * @property
      */
     params?: any;
-    
+
     /**
      * Gets the params for the route to set.
      * 
      * @property
      */
     routeParams?: any;
-    
+
     /**
      * Gets the global object that should be used in any callback.
      * 
      * @property
      */
     tag?: any;
-    
+
     /**
      * Gets the timeout in millisecons.
      * 
      * @property
      */
     timeout?: number;
-    
+
     /**
      * Gets request type.
      * 
@@ -2478,49 +2477,49 @@ export enum LogCategory {
 }
 
 class LogMessage implements ILogMessage {
-    private _category : LogCategory;
-    private _message : any;
-    private _priority : LogPriority;
-    private _source : LogSource;
-    private _tag : string;
-    private _time : Date;
-    
-    constructor(source : LogSource,
-                time: Date,
-                msg: any, tag: string,
-                category: LogCategory, priority : LogPriority) {
-        
+    private _category: LogCategory;
+    private _message: any;
+    private _priority: LogPriority;
+    private _source: LogSource;
+    private _tag: string;
+    private _time: Date;
+
+    constructor(source: LogSource,
+        time: Date,
+        msg: any, tag: string,
+        category: LogCategory, priority: LogPriority) {
+
         this._source = source;
-        
+
         this._time = time;
-        
+
         this._message = msg;
         this._tag = tag;
-        
+
         this._category = category;
         this._priority = priority;
     }
-    
+
     public get category(): LogCategory {
         return this._category;
     }
-    
+
     public get message(): any {
         return this._message;
     }
-    
+
     public get priority(): LogPriority {
         return this._priority;
     }
-    
+
     public get source(): LogSource {
         return this._source;
     }
-    
+
     public get tag(): string {
         return this._tag;
     }
-    
+
     public get time(): Date {
         return this._time;
     }
@@ -2545,17 +2544,17 @@ export enum LogSource {
      * From API client.
      */
     Client,
-    
+
     /**
      * From "completed" action
      */
     Complete,
-    
+
     /**
      * From IApiClientError object
      */
     Error,
-    
+
     /**
      * From IApiClientResult object
      */
@@ -2567,9 +2566,9 @@ export enum LogSource {
  */
 export class OAuth implements IAuthorizer {
     private _fields = {};
-    
+
     /** @inheritdoc */
-    public prepare(reqOpts : HTTP.HttpRequestOptions) {
+    public prepare(reqOpts: HTTP.HttpRequestOptions) {
         var i = 0;
         var fieldList = '';
         for (var f in this._fields) {
@@ -2630,7 +2629,7 @@ export class TwitterOAuth extends OAuth {
     private _consumerSecret: string;
     private _token: string;
     private _tokenSecret: string;
-    
+
     /**
      * Initializes a new instance of that class.
      * 
@@ -2640,8 +2639,8 @@ export class TwitterOAuth extends OAuth {
      * @param {String} tokenSecret The token secret.
      */
     constructor(consumerKey: string, consumerSecret: string,
-                token: string, tokenSecret: string) {
-        
+        token: string, tokenSecret: string) {
+
         super();
 
         this._consumerKey = consumerKey;
@@ -2650,7 +2649,7 @@ export class TwitterOAuth extends OAuth {
         this._tokenSecret = tokenSecret;
 
         // initial value for 'nonce' property
-        const NONCE_CHARS = '0123456789abcdef';    
+        const NONCE_CHARS = '0123456789abcdef';
         this.nonce = '';
         for (var i = 0; i < 32; i++) {
             this.nonce += NONCE_CHARS[Math.floor(Math.random() * NONCE_CHARS.length) % NONCE_CHARS.length];
@@ -2658,7 +2657,7 @@ export class TwitterOAuth extends OAuth {
     }
 
     /** @inheritdoc */
-    public prepare(reqOpts : HTTP.HttpRequestOptions) {
+    public prepare(reqOpts: HTTP.HttpRequestOptions) {
         var timestamp = this.timestamp;
         if (TypeUtils.isNullOrUndefined(timestamp)) {
             timestamp = new Date();
@@ -2707,7 +2706,7 @@ export class TwitterOAuth extends OAuth {
      * Gets or sets the value for "oauth_signature_method".
      */
     public signatureMethod: string = 'HMAC-SHA1';
-    
+
     /**
      * Gets or sets the value for "oauth_timestamp".
      */
@@ -2726,7 +2725,7 @@ function encodeBase64(str: string) {
 
     var padChar = '=';
     var alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-    var getByte = function(s: string, i: number) {
+    var getByte = function (s: string, i: number) {
         var cc = s.charCodeAt(i);
         if (cc > 255) {
             throw "INVALID_CHARACTER_ERR: DOM Exception 5";
@@ -2742,8 +2741,8 @@ function encodeBase64(str: string) {
 
     for (i = 0; i < iMax; i += 3) {
         b10 = (getByte(str, i) << 16) |
-              (getByte(str, i + 1) << 8) |
-              getByte(str, i + 2);
+            (getByte(str, i + 1) << 8) |
+            getByte(str, i + 2);
 
         b64Chars.push(alpha.charAt(b10 >> 18));
         b64Chars.push(alpha.charAt((b10 >> 12) & 0x3F));
@@ -2755,13 +2754,13 @@ function encodeBase64(str: string) {
         case 1:
             b10 = getByte(str, i) << 16;
             b64Chars.push(alpha.charAt(b10 >> 18) + alpha.charAt((b10 >> 12) & 0x3F) +
-                          padChar + padChar);
+                padChar + padChar);
             break;
-        
+
         case 2:
             b10 = (getByte(str, i) << 16) | (getByte(str, i + 1) << 8);
             b64Chars.push(alpha.charAt(b10 >> 18) + alpha.charAt((b10 >> 12) & 0x3F) +
-                          alpha.charAt((b10 >> 6) & 0x3F) + padChar);
+                alpha.charAt((b10 >> 6) & 0x3F) + padChar);
             break;
     }
 
@@ -2772,43 +2771,43 @@ function getOwnProperties(obj) {
     if (TypeUtils.isNullOrUndefined(obj)) {
         return undefined;
     }
-    
-    var properties : any = {};
-    
+
+    var properties: any = {};
+
     for (var p in obj) {
         if (obj.hasOwnProperty(p)) {
             properties[p] = obj[p];
         }
     }
-    
+
     return properties;
 }
 
-function invokeLogActions(client : ApiClient, msg : ILogMessage) {
+function invokeLogActions(client: ApiClient, msg: ILogMessage) {
     for (var i = 0; i < client.logActions.length; i++) {
         try {
             var la = client.logActions[i];
             la(msg);
         }
         catch (e) {
-            console.log("[ERROR] invokeLogActions(" + i +"): " + e);
+            console.log("[ERROR] invokeLogActions(" + i + "): " + e);
         }
     }
 }
 
-function isEmptyString(str : string) : boolean {
+function isEmptyString(str: string): boolean {
     if (TypeUtils.isNullOrUndefined(str)) {
         return true;
     }
-    
+
     return "" === str.trim();
 }
 
-function methodToString(method : any) : string {
+function methodToString(method: any): string {
     if (TypeUtils.isNullOrUndefined(method)) {
         return "GET";
     }
-    
+
     if (typeof method !== "string") {
         method = HttpMethod[method];
     }
@@ -2823,18 +2822,18 @@ function methodToString(method : any) : string {
  * 
  * @return {IApiClient} The new client.
  */
-export function newClient(config : IApiClientConfig | string) : IApiClient {
-    var cfg : any = config;
-    
+export function newClient(config: IApiClientConfig | string): IApiClient {
+    var cfg: any = config;
+
     if (typeof cfg === "string") {
         cfg = <IApiClientConfig>{
             baseUrl: config
         };
     }
-    
+
     if (TypeUtils.isNullOrUndefined(cfg)) {
         cfg = {};
     }
-    
+
     return new ApiClient(cfg);
 }
