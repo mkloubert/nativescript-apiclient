@@ -75,7 +75,7 @@ export function createViewModel(page: Page) {
             console.log("Target currency: " + targetCurrency);
 
             var client = ApiClient.newClient({
-                baseUrl: "http://api.fixer.io",
+                baseUrl: "https://api.fixer.io",
                 route: "{date}",
             });
 
