@@ -1,5 +1,6 @@
 /demo/platforms
 /demo/node_modules
-/plugin/index.js.map
-/demo/app/*.map
+/plugin/node_modules
 /pushall.sh
+/**/*.js
+/**/*.js.map

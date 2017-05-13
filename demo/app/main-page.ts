@@ -1,4 +1,4 @@
-import ViewModel = require("./main-view-model");
+import * as ViewModel from "./main-view-model";
 
 function onNavigatingTo(args) {
     var page = args.object;

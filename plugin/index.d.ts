@@ -1,4 +1,4 @@
-import FileSystem = require("file-system");
+import * as FileSystem from "file-system";
 import HTTP = require("http");
 import Image = require("image-source");
 /**
